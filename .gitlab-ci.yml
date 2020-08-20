@@ -1,0 +1,18 @@
+image: git@github.com:mehak-agr/wsl
+
+before_script:
+  - pip install -r requirements_test.txt
+  - pip install --no-dependencies -e .
+
+stages:
+    - syntax
+
+lint:
+  stage: syntax
+  script:
+    - flake8 wsl/
+
+type:
+  stage: syntax
+  script:
+    - mypy wsl/
