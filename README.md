@@ -1,2 +1,2 @@
-# wsl
+# Weakly Supervised Detection
 Weakly Supervised Localization
