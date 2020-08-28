@@ -1,7 +1,6 @@
 html5lib==1.0.1
 imageio==2.8.0
 jsonpickle==0.9.6
-jupyterlab==2.2.0
 networkx==2.1
 pandas==1.0.3
 pydicom==2.0.0

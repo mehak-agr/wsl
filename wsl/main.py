@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
-import wsl.train.main as train
+from wsl.run import train
+
 
 def main():
     '''This is the main entrypoint for the entire project.
@@ -22,9 +23,46 @@ def main():
 
     # Train - the main training routine
     train_parser = subparsers.add_parser('train', help='Train a model')
-    train_parser.add_argument('--check',
-                              action='store_true',
-                              help='Prints \'works\' on successful install')
+
+    # Type of dataset
+    train_parser.add_argument('--data', type=str,
+                              help='Type of dataset')
+    train_parser.add_argument('--dicom', action='store_truth')
+    train_parser.add_argument('--classes', type=int, default=1)
+
+    # Type of model
+    train_parser.add_argument('--network', type=str, default='densenet',
+                              help='Choose - densenet/resnet/vgg')
+    train_parser.add_argument('--depth', type=int, default='121',
+                              help='Model depth')
+    train_parser.add_argument('--wildcat', action='store_truth',
+                              help='Add wildcat layers to network')
+    train_parser.add_argument('--pretrained', action='store_truth',
+                              help='Use pretrianed network')
+    train_parser.add_argument('--optim', type=str, default='adam',
+                              help='Choose - sgd/adam')
+
+    # For resuming model
+    train_parser.add_argument('--resume', action='store_truth',
+                              help='Resume network')
+    train_parser.add_argument('--name', type=str,
+                              help='Model name to resume')
+
+    # General parameters
+    train_parser.add_argument('--lr', type=float, default=1e-5)
+    train_parser.add_argument('--batchsize', type=int, default=32)
+    train_parser.add_argument('--workers', type=int, default=4)
+    train_parser.add_argument('--patience', type=int, default=10)
+    train_parser.add_argument('--balanced', action='store_truth')
+
+    # Wildcat parameters
+    train_parser.add_argument('--maps', default=2, type=int,
+                              help='maps per class')
+    train_parser.add_argument('--alpha', default=0.0, type=float,
+                              help='Global Average Pooling layer weight')
+    train_parser.add_argument('--k', default=1, type=float,
+                              help='local pixels choosen')
+
     train_parser.set_defaults(func=train.main)
 
     # Run the parsers
