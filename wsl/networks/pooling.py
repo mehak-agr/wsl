@@ -5,13 +5,9 @@ from torch.autograd import Function
 
 
 class WildcatPool2dFunction(Function):
-    def __init__(self, kmax, kmin, alpha):
-        super(WildcatPool2dFunction, self).__init__()
-        self.kmax = kmax
-        self.kmin = kmin
-        self.alpha = alpha
 
-    def get_positive_k(self, k, n):
+    @staticmethod
+    def get_positive_k(k, n):
         if k <= 0:
             return 0
         elif k < 1:
@@ -21,7 +17,9 @@ class WildcatPool2dFunction(Function):
         else:
             return int(k)
 
-    def forward(self, input):
+    @staticmethod
+    def forward(ctx, input, args):
+        ctx.kmax, ctx.kmin, ctx.alpha = args[0], args[1], args[2]
         batch_size = input.size(0)
         num_channels = input.size(1)
         h = input.size(2)
@@ -29,25 +27,25 @@ class WildcatPool2dFunction(Function):
 
         n = h * w  # number of regions
 
-        kmax = self.get_positive_k(self.kmax, n)
-        kmin = self.get_positive_k(self.kmin, n)
+        kmax = WildcatPool2dFunction.get_positive_k(ctx.kmax, n)
+        kmin = WildcatPool2dFunction.get_positive_k(ctx.kmin, n)
 
         sorted, indices = input.new(), input.new().long()
         torch.sort(input.view(batch_size, num_channels, n), dim=2, descending=True, out=(sorted, indices))
 
-        self.indices_max = indices.narrow(2, 0, kmax)
+        ctx.indices_max = indices.narrow(2, 0, kmax)
         output = sorted.narrow(2, 0, kmax).sum(2).div_(kmax)
 
-        if kmin > 0 and self.alpha != 0:
-            self.indices_min = indices.narrow(2, n - kmin, kmin)
-            output.add_(sorted.narrow(2, n - kmin, kmin).sum(2).mul_(self.alpha / kmin)).div_(2)
+        if kmin > 0 and ctx.alpha != 0:
+            ctx.indices_min = indices.narrow(2, n - kmin, kmin)
+            output.add_(sorted.narrow(2, n - kmin, kmin).sum(2).mul_(ctx.alpha / kmin)).div_(2)
 
-        self.save_for_backward(input)
+        ctx.save_for_backward(input)
         return output.view(batch_size, num_channels)
 
-    def backward(self, grad_output):
-
-        input, = self.saved_tensors
+    @staticmethod
+    def backward(ctx, grad_output):
+        input, = ctx.saved_tensors
 
         batch_size = input.size(0)
         num_channels = input.size(1)
@@ -56,21 +54,19 @@ class WildcatPool2dFunction(Function):
 
         n = h * w  # number of regions
 
-        kmax = self.get_positive_k(self.kmax, n)
-        kmin = self.get_positive_k(self.kmin, n)
+        kmax = WildcatPool2dFunction.get_positive_k(ctx.kmax, n)
+        kmin = WildcatPool2dFunction.get_positive_k(ctx.kmin, n)
 
         grad_output_max = grad_output.view(batch_size, num_channels, 1).expand(batch_size, num_channels, kmax)
 
-        grad_input = grad_output.new().resize_(batch_size, num_channels, n).fill_(0).scatter_(2, self.indices_max,
-                                                                                              grad_output_max).div_(
-            kmax)
+        grad_input = grad_output.new().resize_(batch_size, num_channels, n).fill_(0).scatter_(2, ctx.indices_max, grad_output_max).div_(kmax)
 
-        if kmin > 0 and self.alpha != 0:
+        if kmin > 0 and ctx.alpha != 0:
             grad_output_min = grad_output.view(batch_size, num_channels, 1).expand(batch_size, num_channels, kmin)
-            grad_input_min = grad_output.new().resize_(batch_size, num_channels, n).fill_(0).scatter_(2, self.indices_min, grad_output_min).mul_(self.alpha / kmin)
+            grad_input_min = grad_output.new().resize_(batch_size, num_channels, n).fill_(0).scatter_(2, ctx.indices_min, grad_output_min).mul_(ctx.alpha / kmin)
             grad_input.add_(grad_input_min).div_(2)
 
-        return grad_input.view(batch_size, num_channels, h, w)
+        return grad_input.view(batch_size, num_channels, h, w), None
 
 
 class WildcatPool2d(nn.Module):
@@ -83,7 +79,7 @@ class WildcatPool2d(nn.Module):
         self.alpha = alpha
 
     def forward(self, input):
-        return WildcatPool2dFunction(self.kmax, self.kmin, self.alpha)(input)
+        return WildcatPool2dFunction.apply(input, [self.kmax, self.kmin, self.alpha])
 
     def __repr__(self):
         return self.__class__.__name__ + ' (kmax=' + str(self.kmax) + ', kmin=' + str(self.kmin) + ', alpha=' + str(
@@ -91,35 +87,34 @@ class WildcatPool2d(nn.Module):
 
 
 class ClassWisePoolFunction(Function):
-    def __init__(self, num_maps):
-        super(ClassWisePoolFunction, self).__init__()
-        self.num_maps = num_maps
 
-    def forward(self, input):
+    @staticmethod
+    def forward(ctx, input, args):
+        ctx.num_maps = args
         # batch dimension
         batch_size, num_channels, h, w = input.size()
 
-        if num_channels % self.num_maps != 0:
+        if num_channels % ctx.num_maps != 0:
             print('Error in ClassWisePoolFunction. Number of channels to be multiple of number of maps per class.')
             sys.exit(-1)
 
-        num_outputs = int(num_channels / self.num_maps)
-        x = input.view(batch_size, num_outputs, self.num_maps, h, w)
+        num_outputs = int(num_channels / ctx.num_maps)
+        x = input.view(batch_size, num_outputs, ctx.num_maps, h, w)
         output = torch.sum(x, 2)
-        self.save_for_backward(input)
-        return output.view(batch_size, num_outputs, h, w) / self.num_maps
+        ctx.save_for_backward(input)
+        return output.view(batch_size, num_outputs, h, w) / ctx.num_maps
 
-    def backward(self, grad_output):
-        input, = self.saved_tensors
+    @staticmethod
+    def backward(ctx, grad_output):
+        input, = ctx.saved_tensors
 
         # batch dimension
         batch_size, num_channels, h, w = input.size()
         num_outputs = grad_output.size(1)
 
-        grad_input = grad_output.view(batch_size, num_outputs, 1, h, w).expand(batch_size, num_outputs, self.num_maps,
+        grad_input = grad_output.view(batch_size, num_outputs, 1, h, w).expand(batch_size, num_outputs, ctx.num_maps,
                                                                                h, w).contiguous()
-
-        return grad_input.view(batch_size, num_channels, h, w)
+        return grad_input.view(batch_size, num_channels, h, w), None
 
 
 class ClassWisePool(nn.Module):
@@ -128,7 +123,7 @@ class ClassWisePool(nn.Module):
         self.num_maps = num_maps
 
     def forward(self, input):
-        return ClassWisePoolFunction(self.num_maps)(input)
+        return ClassWisePoolFunction.apply(input, self.num_maps)
 
     def __repr__(self):
         return self.__class__.__name__ + ' (num_maps={num_maps})'.format(num_maps=self.num_maps)

@@ -73,7 +73,7 @@ class Architecture(nn.Module):
     def forward(self, x):
         x = self.features(x)
         if self.wildcat:
-            x = self.classifer(x)
+            x = self.classifier(x)
             x = self.pool(x)
         else:
             x = self.pool(x)
