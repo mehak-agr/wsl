@@ -25,35 +25,37 @@ def main():
     train_parser = subparsers.add_parser('train', help='Train a model')
 
     # Type of dataset
-    train_parser.add_argument('--data', type=str,
+    train_parser.add_argument('--debug', action='store_true',
+                              help='In debugging mode, runs for just 10 sample images.')
+    train_parser.add_argument('--data', type=str, default='rsna',
                               help='Type of dataset')
-    train_parser.add_argument('--dicom', action='store_truth')
+    train_parser.add_argument('--dicom', action='store_true')
     train_parser.add_argument('--classes', type=int, default=1)
 
     # Type of model
     train_parser.add_argument('--network', type=str, default='densenet',
                               help='Choose - densenet/resnet/vgg')
-    train_parser.add_argument('--depth', type=int, default='121',
+    train_parser.add_argument('--depth', type=int, default=121,
                               help='Model depth')
-    train_parser.add_argument('--wildcat', action='store_truth',
+    train_parser.add_argument('--wildcat', action='store_true',
                               help='Add wildcat layers to network')
-    train_parser.add_argument('--pretrained', action='store_truth',
+    train_parser.add_argument('--pretrained', action='store_true',
                               help='Use pretrianed network')
     train_parser.add_argument('--optim', type=str, default='adam',
                               help='Choose - sgd/adam')
 
     # For resuming model
-    train_parser.add_argument('--resume', action='store_truth',
+    train_parser.add_argument('--resume', action='store_true',
                               help='Resume network')
     train_parser.add_argument('--name', type=str,
                               help='Model name to resume')
 
     # General parameters
-    train_parser.add_argument('--lr', type=float, default=1e-5)
-    train_parser.add_argument('--batchsize', type=int, default=32)
+    train_parser.add_argument('--lr', type=float, default=1e-6)
+    train_parser.add_argument('--batchsize', type=int, default=64)
     train_parser.add_argument('--workers', type=int, default=4)
     train_parser.add_argument('--patience', type=int, default=10)
-    train_parser.add_argument('--balanced', action='store_truth')
+    train_parser.add_argument('--balanced', action='store_true')
 
     # Wildcat parameters
     train_parser.add_argument('--maps', default=2, type=int,

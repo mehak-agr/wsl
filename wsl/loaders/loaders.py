@@ -17,7 +17,7 @@ from wsl.locations import wsl_data_dir
 
 
 class BinaryLoader(Dataset):
-    def __init__(self, data: str, split: str, extension: str):
+    def __init__(self, data: str, split: str, extension: str, debug: bool):
 
         self.datapath = wsl_data_dir / data / 'images'
         self.extension = extension
@@ -26,6 +26,10 @@ class BinaryLoader(Dataset):
         df = df.drop_duplicates(subset='Id', keep='first', ignore_index=True)
         self.names = pd.read_csv(wsl_data_dir / data / f'{split}.csv').Id.tolist()
         self.labels = reduce(pd.DataFrame.append, map(lambda i: df[df.Id == i], self.names)).Target.tolist()
+        if debug:
+            self.names = self.names[0:100]
+            self.labels = self.labels[0:100]
+            
         self.pos_weight = [round((len(self.labels) - sum(self.labels)) / sum(self.labels), 2)]
 
         self.common_transforms = Compose([

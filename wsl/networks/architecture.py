@@ -1,4 +1,4 @@
-import torch.nn as nn
+from torch import nn
 from torchvision import models
 
 from wsl.networks.pooling import ClassWisePool, WildcatPool2d
@@ -32,8 +32,8 @@ class Architecture(nn.Module):
                 model = models.resnet18(pretrained=True)
             elif depth == 34:
                 model = models.resnet34(pretrained=True)
-            elif depth == 54:
-                model = models.resnet54(pretrained=True)
+            elif depth == 50:
+                model = models.resnet50(pretrained=True)
             elif depth == 101:
                 model = models.resnet101(pretrained=True)
             elif depth == 152:
@@ -63,12 +63,14 @@ class Architecture(nn.Module):
             raise ValueError('Unsupported network type, must be one of densenet, resnet, vgg')
 
         if wildcat:
+            print('making wildcat model...', end='')
             self.classifier = nn.Conv2d(in_ftrs, maps * classes, kernel_size=1, stride=1, padding=0, bias=True)
             self.pool = nn.Sequential(ClassWisePool(maps),
                                       WildcatPool2d(kmin=k, kmax=k, alpha=alpha))
         else:
+            print('making baseline model...', end='')
             self.pool = nn.AdaptiveAvgPool2d(1)
-            self.classifer = nn.Linear(in_ftrs, classes)
+            self.classifier = nn.Linear(in_ftrs, classes)
 
     def forward(self, x):
         x = self.features(x)
@@ -77,5 +79,6 @@ class Architecture(nn.Module):
             x = self.pool(x)
         else:
             x = self.pool(x)
+            x = x.view(x.size(0), x.size(1))
             x = self.classifier(x)
         return x

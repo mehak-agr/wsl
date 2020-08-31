@@ -1,4 +1,5 @@
 import os
+import time
 import requests
 import datetime
 import matplotlib.pyplot as plt
@@ -14,12 +15,13 @@ from wsl.networks.engine import engine
 from wsl.loaders.loaders import BinaryLoader
 
 
-def main(data: str = 'rsna',
+def main(debug: bool = False,
+         data: str = 'rsna',
          dicom: bool = True,
          classes: int = 1,
          network: str = 'densenet',
          depth: int = 121,
-         wildcat: bool = True,
+         wildcat: bool = False,
          pretrained: bool = True,
          optim: str = 'adam',
          resume: bool = False,
@@ -49,16 +51,13 @@ def main(data: str = 'rsna',
             # As a fallback use the date and time
             mname = datetime.datetime.now().strftime('%d_%m_%H_%M_%S')
 
-        if wildcat:
-            type_str = f'_wildcat_maps{maps}_alpha{alpha}_k{k}'
-
         full_mname = (data +
                       ('_dicom' if dicom else '') + '_' +
                       f'lr{lr}_bs{batchsize}_{optim}' +
                       ('_pre' if pretrained else '') +
                       ('_bal' if balanced else '') + '_' +
                       f'{network}{depth}' +
-                      (type_str if 'wildcat' else '') + '_' +
+                      (f'_wildcat_maps{maps}_alpha{alpha}_k{k}' if 'wildcat' else '') + '_' +
                       mname)
         model_dir = wsl_model_dir / full_mname
     print('done')
@@ -66,12 +65,12 @@ def main(data: str = 'rsna',
 
     # ------------------------------------------------------
     print('Initializing loaders...', end='', flush=True)
-    train_dataset = BinaryLoader(data, 'train', 'dcm')
+    train_dataset = BinaryLoader(data, 'train', 'dcm', debug)
     train_loader = DataLoader(  # type: ignore
         train_dataset, batch_size=batchsize, num_workers=workers, pin_memory=True, shuffle=True
     )
 
-    test_dataset = BinaryLoader(data, 'valid', 'dcm')
+    test_dataset = BinaryLoader(data, 'valid', 'dcm', debug)
     test_loader = DataLoader(  # type: ignore
         test_dataset, batch_size=batchsize, num_workers=workers, pin_memory=True, shuffle=True
     )
@@ -102,7 +101,7 @@ def main(data: str = 'rsna',
     # ------------------------------------------------------
     epoch = 0
 
-    best_epoch = -1
+    best_epoch = 0
     best_loss = 100
 
     train_loss_all = []
@@ -111,7 +110,10 @@ def main(data: str = 'rsna',
     train_roc_all = []
     test_roc_all = []
 
-    while (epoch - best_epoch < patience):
+    # ------------------------------------------------------
+
+    while (epoch - best_epoch <= patience):
+        start = time.time()
         epoch += 1
         print('Epoch:', epoch, '-Training')
         model.train()
@@ -151,5 +153,11 @@ def main(data: str = 'rsna',
         plt.savefig(model_dir / 'graphs.png', dpi=300)
         plt.close()
 
+        print('Time taken:', int((time.time() - start) / 60), 'secs')
 
-main()
+        if debug:
+            print('Breaking early since we are in debug mode')
+            print('You can find the trained model at -', model_dir)
+            break
+
+    return
