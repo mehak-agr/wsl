@@ -1,6 +1,5 @@
-'''This is a module for including project wide definitions of locations where files are stored.'''
+#!/usr/bin/python3
 from pathlib import Path
-
 
 # Standard location for share mounting
 mount = Path('/data/2015P002510')

@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 from torch import nn
 from torchvision import models
 

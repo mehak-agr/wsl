@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import numpy as np
 import pandas as pd
 from functools import reduce
@@ -29,7 +30,7 @@ class BinaryLoader(Dataset):
         if debug:
             self.names = self.names[0:100]
             self.labels = self.labels[0:100]
-            
+
         self.pos_weight = [round((len(self.labels) - sum(self.labels)) / sum(self.labels), 2)]
 
         self.common_transforms = Compose([
