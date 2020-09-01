@@ -3,7 +3,7 @@ Weakly Supervised Localization
 
 Login to the machine  
 make a folder A where your repository will reside  
-$cd folder-A  
+$ cd folder-A  
   
 In folder-A  
 $ git clone https://github.com/mehak-agr/wsl.git  
