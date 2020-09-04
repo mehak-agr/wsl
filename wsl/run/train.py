@@ -13,13 +13,14 @@ from torch.utils.data import DataLoader
 
 from wsl.networks.architecture import Architecture
 from wsl.networks.engine import engine
-from wsl.loaders.loaders import BinaryLoader
+from wsl.loaders.loaders import Loader
 
 
 def main(debug: bool = False,
          data: str = 'rsna',
-         dicom: bool = True,
+         extension: str = 'dcm',
          classes: int = 1,
+         col_name: str = 'Target',
          network: str = 'densenet',
          depth: int = 121,
          wildcat: bool = False,
@@ -34,7 +35,9 @@ def main(debug: bool = False,
          balanced: bool = True,
          maps: int = 4,
          alpha: float = 0.0,
-         k: int = 1):
+         k: int = 1,
+         regression: bool = True,
+         error_range: int = 4):
 
     # ------------------------------------------------------
     print('Initializing model...', end='')
@@ -52,8 +55,8 @@ def main(debug: bool = False,
             # As a fallback use the date and time
             mname = datetime.datetime.now().strftime('%d_%m_%H_%M_%S')
 
-        full_mname = (data +
-                      ('_dicom' if dicom else '') + '_' +
+        full_mname = (('debug_' if debug else '') +
+                      data + '_' +
                       f'lr{lr}_bs{batchsize}_{optim}' +
                       ('_pre' if pretrained else '') +
                       ('_bal' if balanced else '') + '_' +
@@ -66,20 +69,46 @@ def main(debug: bool = False,
 
     # ------------------------------------------------------
     print('Initializing loaders...', end='', flush=True)
-    train_dataset = BinaryLoader(data, 'train', 'dcm', debug)
+    print('train...', end='', flush=True)
+    train_dataset = Loader(data,
+                           split='train',
+                           extension=extension,
+                           classes=classes,
+                           col_name=col_name,
+                           regression=regression,
+                           debug=debug)
     train_loader = DataLoader(  # type: ignore
         train_dataset, batch_size=batchsize, num_workers=workers, pin_memory=True, shuffle=True
     )
 
-    test_dataset = BinaryLoader(data, 'valid', 'dcm', debug)
+    print('test...', end='', flush=True)
+    test_dataset = Loader(data,
+                          split='valid',
+                          extension=extension,
+                          classes=classes,
+                          col_name=col_name,
+                          regression=regression,
+                          debug=debug)
     test_loader = DataLoader(  # type: ignore
         test_dataset, batch_size=batchsize, num_workers=workers, pin_memory=True, shuffle=True
     )
     print('done')
 
+    if regression:
+        reg_args = {'max': train_dataset.lmax,
+                    'min': train_dataset.lmin,
+                    'error_range': error_range}
+    else:
+        reg_args = None
+
+    if classes > 1:
+        print('Class List: ', train_dataset.class_names)
+
     # ------------------------------------------------------
     print('Initializing optim/criterion...', end='')
-    if balanced:
+    if regression:
+        criterion = nn.MSELoss()
+    elif balanced:
         criterion = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor(train_dataset.pos_weight))
     else:
         criterion = nn.BCEWithLogitsLoss()
@@ -99,6 +128,7 @@ def main(debug: bool = False,
         'optimizer': optimizer,
         'criterion': criterion}
 
+    print('done')
     # ------------------------------------------------------
     epoch = 0
 
@@ -108,8 +138,8 @@ def main(debug: bool = False,
     train_loss_all = []
     test_loss_all = []
 
-    train_roc_all = []
-    test_roc_all = []
+    train_rmetric_all = []
+    test_rmetric_all = []
 
     # ------------------------------------------------------
 
@@ -118,15 +148,17 @@ def main(debug: bool = False,
         epoch += 1
         print('Epoch:', epoch, '-Training')
         model.train()
-        loss, roc = engine(epoch, train_loader, checkpoint, batchsize, is_train=True)
+        loss, rmetric, summary_train = engine(epoch, train_loader, checkpoint,
+                                              batchsize, classes, reg_args, is_train=True)
         train_loss_all.append(loss)
-        train_roc_all.append(roc)
+        train_rmetric_all.append(rmetric)
 
         print('Epoch:', epoch, '-Testing')
         model.eval()
-        loss, roc = engine(epoch, test_loader, checkpoint, batchsize, is_train=False)
+        loss, rmetric, summary_test = engine(epoch, test_loader, checkpoint,
+                                             batchsize, classes, reg_args, is_train=False)
         test_loss_all.append(loss)
-        test_roc_all.append(roc)
+        test_rmetric_all.append(rmetric)
 
         os.makedirs(model_dir, exist_ok=True)
         torch.save(checkpoint, model_dir / 'current.pt')
@@ -138,6 +170,9 @@ def main(debug: bool = False,
         else:
             print('Best model unchanged- Epoch:', best_epoch, 'Loss:', best_loss)
 
+        with open(model_dir / 'summary.txt', 'a+') as file:
+            file.write(f'Epoch: {epoch} \n Train:{summary_train} \n Test:{summary_test}')
+
         plt.figure(figsize=(12, 18))
         plt.subplot(2, 1, 1)
         plt.plot(train_loss_all, label='Train loss')
@@ -146,15 +181,15 @@ def main(debug: bool = False,
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
         plt.subplot(2, 1, 2)
-        plt.plot(train_roc_all, label='Train auROC')
-        plt.plot(test_roc_all, label='Test auROC')
+        plt.plot(train_rmetric_all, label='Train rmetric')
+        plt.plot(test_rmetric_all, label='Test rmetric')
         plt.legend()
         plt.xlabel('Epoch')
-        plt.ylabel('auROC')
+        plt.ylabel('rmetric')
         plt.savefig(model_dir / 'graphs.png', dpi=300)
         plt.close()
 
-        print('Time taken:', int((time.time() - start) / 60), 'secs')
+        print('Time taken:', int(time.time() - start), 'secs')
 
         if debug:
             print('Breaking early since we are in debug mode')

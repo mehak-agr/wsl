@@ -1,8 +1,10 @@
 #!/usr/bin/python3
+import sys
 import numpy as np
 import pandas as pd
-from functools import reduce
+from ast import literal_eval
 import pydicom
+import skimage.io
 from pathlib import Path
 
 from monai.data import Dataset
@@ -13,49 +15,86 @@ from monai.transforms import (
     CastToType,
     ToTensor
 )
+import torch
 
 from wsl.locations import wsl_data_dir
 
 
-class BinaryLoader(Dataset):
-    def __init__(self, data: str, split: str, extension: str, debug: bool):
+class Loader(Dataset):
+    def __init__(self, data: str, split: str, extension: str,
+                 classes: int, col_name: str,
+                 regression: bool, debug: bool):
+
+        if regression and classes != 1:
+            print('Support for multi-class regression is not available.')
+            sys.exit(1)
 
         self.datapath = wsl_data_dir / data / 'images'
-        self.extension = extension
+        self.data = data
+        self.classes = classes
 
-        df = pd.read_csv(wsl_data_dir / data / 'info.csv')
+        known_extensions = {'rsna': 'dcm', 'chexpert': 'jpg'}
+        if data in known_extensions.keys():
+            self.extension = known_extensions[data]
+        else:
+            self.extension = extension
+
+        df = pd.read_csv(wsl_data_dir / data / 'info.csv', converters={col_name: literal_eval})
         df = df.drop_duplicates(subset='Id', keep='first', ignore_index=True)
-        self.names = pd.read_csv(wsl_data_dir / data / f'{split}.csv').Id.tolist()
-        self.labels = reduce(pd.DataFrame.append, map(lambda i: df[df.Id == i], self.names)).Target.tolist()
+        Ids = pd.read_csv(wsl_data_dir / data / f'{split}.csv').Id.tolist()
+        df = df[df.Id.isin(Ids)]
+
+        self.names = df.Id.to_list()
+        self.labels = df[col_name].tolist()
+
         if debug:
             self.names = self.names[0:100]
             self.labels = self.labels[0:100]
 
-        self.pos_weight = [round((len(self.labels) - sum(self.labels)) / sum(self.labels), 2)]
-
-        self.common_transforms = Compose([
+        self.image_transforms = Compose([
             Resize((224, 224)),
             RepeatChannel(repeats=3),
             CastToType(dtype=np.float32),
-            # NormalizeIntensity(subtrahend=np.array([0.485, 0.456, 0.406]), divisor=np.array([0.229, 0.224, 0.225])),
-            ToTensor()]
-        )
+            ToTensor()])
+
+        if regression:
+            self.lmax = df.col_name.max()
+            self.lmin = df.col_name.min()
+            self.labels = [[round((x - self.lmin) / self.lmax, 2)] for x in self.labels]
+        else:
+            if classes == 1:
+                self.labels = [[x] for x in self.labels]
+            else:
+                self.class_names = self.labels[0].keys()
+                self.labels = [list(x.values()) for x in self.labels]
+
+            self.pos_weight = [round((len(col) - sum(col)) / sum(col), 2) for col in zip(*self.labels)]
 
     def load_image(self, path: Path):
-        ref = pydicom.dcmread(path)
-        img = ref.pixel_array
-        pi = ref.PhotometricInterpretation
-        if pi.strip() == 'MONOCHROME1':
-            img = -img
+        if self.extension == 'jpg':
+            img = skimage.io.imread(path)
+        else:
+            ref = pydicom.dcmread(path)
+            img = ref.pixel_array
+            pi = ref.PhotometricInterpretation
+            if pi.strip() == 'MONOCHROME1':
+                img = -img
         img = (img - np.min(img)) / (np.max(img) - np.min(img))
         img = np.expand_dims(img, axis=0)
+
         return img.astype(np.float32)
 
     def __getitem__(self, idx):
         name = self.names[idx]
         path = self.datapath / f'{name}.{self.extension}'
         img = self.load_image(path)
-        return self.common_transforms(img), self.labels[idx]
+        img = self.image_transforms(img)
+
+        label = self.labels[idx]
+        label = torch.Tensor(label)
+
+        return img, label
 
     def __len__(self):
         return len(self.names)
+

@@ -30,8 +30,10 @@ def main():
                               help='In debugging mode, runs for just 10 sample images.')
     train_parser.add_argument('--data', type=str, default='rsna',
                               help='Type of dataset')
-    train_parser.add_argument('--dicom', action='store_true')
+    train_parser.add_argument('--extension', type=str, default='dcm')
     train_parser.add_argument('--classes', type=int, default=1)
+    train_parser.add_argument('--col_name', type=str, default='Target',
+                              help='Name of the column that contains ground truth in info.csv')
 
     # Type of model
     train_parser.add_argument('--network', type=str, default='densenet',
@@ -65,6 +67,11 @@ def main():
                               help='Global Average Pooling layer weight')
     train_parser.add_argument('--k', default=1, type=float,
                               help='local pixels choosen')
+
+    # Regression Parameters
+    train_parser.add_argument('--regression', action='store_true')
+    train_parser.add_argument('--error_range', default=4, type=int,
+                              help='absolute error allowed')
 
     train_parser.set_defaults(func=train.main)
 
