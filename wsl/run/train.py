@@ -16,28 +16,28 @@ from wsl.networks.engine import engine
 from wsl.loaders.loaders import Loader
 
 
-def main(debug: bool = False,
-         data: str = 'rsna',
-         extension: str = 'dcm',
-         classes: int = 1,
-         col_name: str = 'Target',
-         network: str = 'densenet',
-         depth: int = 121,
-         wildcat: bool = False,
-         pretrained: bool = True,
-         optim: str = 'adam',
-         resume: bool = False,
-         name: str = '',
-         lr: float = 1e-6,
-         batchsize: int = 64,
-         workers: int = 4,
-         patience: int = 16,
-         balanced: bool = True,
-         maps: int = 4,
-         alpha: float = 0.0,
-         k: int = 1,
-         regression: bool = True,
-         error_range: int = 4):
+def main(debug: bool,
+         data: str,
+         col_name: str,
+         extension: str,
+         classes: int,
+         network: str,
+         depth: int,
+         wildcat: bool,
+         pretrained: bool,
+         optim: str,
+         resume: bool,
+         name: str,
+         lr: float,
+         batchsize: int,
+         workers: int,
+         patience: int,
+         balanced: bool,
+         maps: int,
+         alpha: float,
+         k: int,
+         regression: bool,
+         error_range: int):
 
     # ------------------------------------------------------
     print('Initializing model...', end='')
@@ -56,7 +56,7 @@ def main(debug: bool = False,
             mname = datetime.datetime.now().strftime('%d_%m_%H_%M_%S')
 
         full_mname = (('debug_' if debug else '') +
-                      data + '_' +
+                      data + '_' + col_name +
                       f'lr{lr}_bs{batchsize}_{optim}' +
                       ('_pre' if pretrained else '') +
                       ('_bal' if balanced else '') + '_' +

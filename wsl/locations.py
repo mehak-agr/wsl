@@ -16,5 +16,8 @@ root = mount / 'Mehak' / 'git_wsl'
 # Location of available datasets
 wsl_data_dir = root / 'data'
 
+# Location of csvs
+wsl_csv_dir = root / 'wsl' / 'wsl' / 'csvs'
+
 # Location of model dir where checkpoints are stored
 wsl_model_dir = root / 'models'

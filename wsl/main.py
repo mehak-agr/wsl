@@ -30,10 +30,10 @@ def main():
                               help='In debugging mode, runs for just 10 sample images.')
     train_parser.add_argument('--data', type=str, default='rsna',
                               help='Type of dataset')
+    train_parser.add_argument('--col_name', type=str, default='Pneumonia',
+                              help='Name of the column that contains ground truth in info.csv')
     train_parser.add_argument('--extension', type=str, default='dcm')
     train_parser.add_argument('--classes', type=int, default=1)
-    train_parser.add_argument('--col_name', type=str, default='Target',
-                              help='Name of the column that contains ground truth in info.csv')
 
     # Type of model
     train_parser.add_argument('--network', type=str, default='densenet',

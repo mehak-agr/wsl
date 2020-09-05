@@ -17,7 +17,7 @@ from monai.transforms import (
 )
 import torch
 
-from wsl.locations import wsl_data_dir
+from wsl.locations import wsl_data_dir, wsl_csv_dir
 
 
 class Loader(Dataset):
@@ -29,7 +29,7 @@ class Loader(Dataset):
             print('Support for multi-class regression is not available.')
             sys.exit(1)
 
-        self.datapath = wsl_data_dir / data / 'images'
+        self.datapath = wsl_data_dir / data
         self.data = data
         self.classes = classes
 
@@ -39,9 +39,9 @@ class Loader(Dataset):
         else:
             self.extension = extension
 
-        df = pd.read_csv(wsl_data_dir / data / 'info.csv', converters={col_name: literal_eval})
+        df = pd.read_csv(wsl_csv_dir / data / 'info.csv', converters={col_name: literal_eval})
         df = df.drop_duplicates(subset='Id', keep='first', ignore_index=True)
-        Ids = pd.read_csv(wsl_data_dir / data / f'{split}.csv').Id.tolist()
+        Ids = pd.read_csv(wsl_csv_dir / data / f'{split}.csv').Id.tolist()
         df = df[df.Id.isin(Ids)]
 
         self.names = df.Id.to_list()
@@ -58,8 +58,8 @@ class Loader(Dataset):
             ToTensor()])
 
         if regression:
-            self.lmax = df.col_name.max()
-            self.lmin = df.col_name.min()
+            self.lmax = df[col_name].max()
+            self.lmin = df[col_name].min()
             self.labels = [[round((x - self.lmin) / self.lmax, 2)] for x in self.labels]
         else:
             if classes == 1:

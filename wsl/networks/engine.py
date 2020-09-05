@@ -40,16 +40,7 @@ def engine(epoch: int, loader: Any, checkpoint: Dict[str, Any],
                   'Speed:', int(speed), 'img/s', end='\r', flush=True)
 
     loss = np.mean(overall_loss)
-    if reg_args is not None:
-        all_labels = [((x * reg_args['max']) + reg_args['min']).item() for x in all_labels]
-        all_preds = [((x * reg_args['max']) + reg_args['min']).item() for x in all_preds]
-        rmetric = r2_score(all_labels, all_preds)
-        a1 = regression_accuracy(all_labels, all_preds, reg_args['error_range'])
-        a2 = regression_accuracy(all_labels, all_preds, reg_args['error_range'] * 2)
-        summary = (f'Epoch Summary- Loss:{round(loss, 3)}  R2:{round(rmetric * 100, 1)} ' +
-                   f'Accuracy at {reg_args.error_range}:{round(100 * a1, 1)} ' +
-                   f'Accuracy at {(reg_args.error_range * 2)}:{round(100 * a2, 1)}')
-    else:
+    if reg_args is None:
         rmetric = compute_roc_auc(all_preds, all_labels, other_act=sigmoid)
         sens = compute_confusion_metric(all_preds, all_labels,
                                         activation=sigmoid, metric_name='sensitivity')
@@ -57,6 +48,16 @@ def engine(epoch: int, loader: Any, checkpoint: Dict[str, Any],
                                         activation=sigmoid, metric_name='specificity')
         summary = (f'Epoch Summary- Loss:{round(loss, 3)}  ROC:{round(rmetric * 100, 1)} ' +
                    f'Sensitivity:{round(100 * sens, 1)}  Specificity: {round(100 * spec, 1)}')
+    else:
+        error_range = reg_args['error_range']
+        all_labels = [((x * reg_args['max']) + reg_args['min']).item() for x in all_labels]
+        all_preds = [((x * reg_args['max']) + reg_args['min']).item() for x in all_preds]
+        rmetric = r2_score(all_labels, all_preds)
+        a1 = regression_accuracy(all_labels, all_preds, error_range)
+        a2 = regression_accuracy(all_labels, all_preds, error_range)
+        summary = (f'Epoch Summary- Loss:{round(loss, 3)}  R2:{round(rmetric, 1)} ' +
+                   f'Accuracy at {error_range}:{round(100 * a1, 1)} ' +
+                   f'Accuracy at {(error_range * 2)}:{round(100 * a2, 1)}')
 
     print(summary)
     return loss, rmetric, summary
