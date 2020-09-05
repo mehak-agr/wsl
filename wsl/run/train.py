@@ -56,7 +56,7 @@ def main(debug: bool,
             mname = datetime.datetime.now().strftime('%d_%m_%H_%M_%S')
 
         full_mname = (('debug_' if debug else '') +
-                      data + '_' + col_name +
+                      data + '_' + col_name + '_' +
                       f'lr{lr}_bs{batchsize}_{optim}' +
                       ('_pre' if pretrained else '') +
                       ('_bal' if balanced else '') + '_' +
