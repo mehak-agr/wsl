@@ -23,7 +23,7 @@ from wsl.locations import wsl_data_dir, wsl_csv_dir
 class Loader(Dataset):
     def __init__(self, data: str, split: str, extension: str,
                  classes: int, col_name: str,
-                 regression: bool, debug: bool):
+                 regression: bool, debug: bool = False):
 
         if regression and classes != 1:
             print('Support for multi-class regression is not available.')
@@ -40,6 +40,7 @@ class Loader(Dataset):
             self.extension = extension
 
         df = pd.read_csv(wsl_csv_dir / data / 'info.csv', converters={col_name: literal_eval})
+        self.df = df
         df = df.drop_duplicates(subset='Id', keep='first', ignore_index=True)
         Ids = pd.read_csv(wsl_csv_dir / data / f'{split}.csv').Id.tolist()
         df = df[df.Id.isin(Ids)]
@@ -80,7 +81,7 @@ class Loader(Dataset):
             if pi.strip() == 'MONOCHROME1':
                 img = -img
         img = (img - np.min(img)) / (np.max(img) - np.min(img))
-        img = np.expand_dims(img, axis=0)
+        img = np.expand_dims(img, axis = 0)
 
         return img.astype(np.float32)
 

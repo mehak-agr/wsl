@@ -6,17 +6,20 @@ from wsl.networks.pooling import ClassWisePool, WildcatPool2d
 
 
 class Architecture(nn.Module):
-    def __init__(self, network: str,
+    def __init__(self,
+                 network: str,
                  depth: int,
                  wildcat: bool,
                  classes: int,
                  maps: int,
                  alpha: float,
                  k: int,
-                 pretrained: bool = True):
+                 pretrained: bool = False,
+                 get_map: bool = False):
         super(Architecture, self).__init__()
 
         self.wildcat = wildcat
+        self.get_map = (get_map and wildcat)
 
         if network == 'densenet':
             if depth == 121:
@@ -26,6 +29,7 @@ class Architecture(nn.Module):
             else:
                 raise ValueError('Unsupported model depth, must be one of 121, 169')
             in_ftrs = model.classifier.in_features
+            pool_size = 1
             self.features = model.features
 
         elif network == 'resnet':
@@ -42,6 +46,7 @@ class Architecture(nn.Module):
             else:
                 raise ValueError('Unsupported model depth, must be one of 18, 34, 50, 101, 152')
             in_ftrs = model.fc.in_features
+            pool_size = model.avgpool.output_size
             self.features = nn.Sequential(
                 model.conv1,
                 model.bn1,
@@ -58,6 +63,7 @@ class Architecture(nn.Module):
             else:
                 raise ValueError('Unsupported model depth, must be one of 19')
             in_ftrs = model.classifier[0].in_features
+            pool_size = model.avgpool.output_size
             self.features = model.features
 
         else:
@@ -70,16 +76,18 @@ class Architecture(nn.Module):
                                       WildcatPool2d(kmin=k, kmax=k, alpha=alpha))
         else:
             print('making baseline model...', end='')
-            self.pool = nn.AdaptiveAvgPool2d(1)
+            self.pool = nn.AdaptiveAvgPool2d(pool_size)
             self.classifier = nn.Linear(in_ftrs, classes)
 
     def forward(self, x):
         x = self.features(x)
         if self.wildcat:
             x = self.classifier(x)
+            if self.get_map:
+                return x
             x = self.pool(x)
         else:
             x = self.pool(x)
-            x = x.view(x.size(0), x.size(1))
+            x = x.view(x.size(0), x.size(1) * x.size(2) * x.size(3))
             x = self.classifier(x)
         return x
