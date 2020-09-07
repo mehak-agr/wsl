@@ -6,17 +6,20 @@ from wsl.networks.pooling import ClassWisePool, WildcatPool2d
 
 
 class Architecture(nn.Module):
-    def __init__(self, network: str,
+    def __init__(self,
+                 network: str,
                  depth: int,
                  wildcat: bool,
                  classes: int,
                  maps: int,
                  alpha: float,
                  k: int,
-                 pretrained: bool = True):
+                 pretrained: bool = False,
+                 get_map: bool = False):
         super(Architecture, self).__init__()
 
         self.wildcat = wildcat
+        self.get_map = (get_map and wildcat)
 
         if network == 'densenet':
             if depth == 121:
@@ -80,6 +83,8 @@ class Architecture(nn.Module):
         x = self.features(x)
         if self.wildcat:
             x = self.classifier(x)
+            if self.get_map:
+                return x
             x = self.pool(x)
         else:
             x = self.pool(x)

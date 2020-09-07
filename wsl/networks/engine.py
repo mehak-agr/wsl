@@ -8,7 +8,7 @@ from monai.metrics import compute_roc_auc, compute_confusion_metric
 import torch
 
 
-def engine(epoch: int, loader: Any, checkpoint: Dict[str, Any],
+def engine(loader: Any, checkpoint: Dict[str, Any],
            batchsize: int, classes: int, reg_args: Any, is_train: bool):
 
     overall_loss = []
@@ -35,7 +35,7 @@ def engine(epoch: int, loader: Any, checkpoint: Dict[str, Any],
             all_labels = torch.cat((labels.detach(), all_labels))
 
             speed = batchsize * iter_num // (time.time() - start)
-            print('Epoch:', epoch, 'Iter:', iter_num,
+            print('Epoch:', checkpoint['epoch'], 'Iter:', iter_num,
                   'Running loss:', round(np.mean(overall_loss), 3),
                   'Speed:', int(speed), 'img/s', end='\r', flush=True)
 

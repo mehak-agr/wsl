@@ -75,6 +75,13 @@ def main():
 
     train_parser.set_defaults(func=train.main)
 
+    # summary - the main testing routine
+    summary_parser = subparsers.add_parser('summary', help='Summarize all models')
+
+    # Related options
+    summary_parser.add_argument('--options', default='', type=str,
+                                help='saliency/classification')
+
     # Run the parsers
     args = top_parser.parse_args()
     if hasattr(args, 'func'):
