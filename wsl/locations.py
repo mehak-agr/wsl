@@ -21,3 +21,6 @@ wsl_csv_dir = root / 'wsl' / 'wsl' / 'csvs'
 
 # Location of model dir where checkpoints are stored
 wsl_model_dir = root / 'models'
+
+# Location of model dir where checkpoints are stored
+wsl_summary_dir = root / 'summary'

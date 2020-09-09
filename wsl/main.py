@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from argparse import ArgumentParser
-from wsl.run import train
+from wsl.run import train, wild
 
 
 def main():
@@ -61,7 +61,7 @@ def main():
     train_parser.add_argument('--balanced', action='store_true')
 
     # Wildcat parameters
-    train_parser.add_argument('--maps', default=2, type=int,
+    train_parser.add_argument('--maps', default=1, type=int,
                               help='maps per class')
     train_parser.add_argument('--alpha', default=0.0, type=float,
                               help='Global Average Pooling layer weight')
@@ -76,11 +76,9 @@ def main():
     train_parser.set_defaults(func=train.main)
 
     # summary - the main testing routine
-    summary_parser = subparsers.add_parser('summary', help='Summarize all models')
-
-    # Related options
-    summary_parser.add_argument('--options', default='', type=str,
-                                help='saliency/classification')
+    wild_parser = subparsers.add_parser('wild', help='Summarize all wild maps results for models')
+    wild_parser.add_argument('--store', action='store_true')
+    wild_parser.set_defaults(func=wild.main)
 
     # Run the parsers
     args = top_parser.parse_args()

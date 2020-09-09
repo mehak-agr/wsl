@@ -96,7 +96,7 @@ class ClassWisePoolFunction(Function):
         batch_size, num_channels, h, w = input.size()
 
         if num_channels % ctx.num_maps != 0:
-            print('Error in ClassWisePoolFunction. Number of channels to be multiple of number of maps per class.')
+            print('Error in ClassWisePoolFunction. Number of channels is not multiple of number of maps.')
             sys.exit(-1)
 
         num_outputs = int(num_channels / ctx.num_maps)
@@ -113,8 +113,8 @@ class ClassWisePoolFunction(Function):
         batch_size, num_channels, h, w = input.size()
         num_outputs = grad_output.size(1)
 
-        grad_input = grad_output.view(batch_size, num_outputs, 1, h, w).expand(batch_size, num_outputs, ctx.num_maps,
-                                                                               h, w).contiguous()
+        grad_output = grad_output.view(batch_size, num_outputs, 1, h, w)
+        grad_input = grad_output.expand(batch_size, num_outputs, ctx.num_maps, h, w).contiguous()
         return grad_input.view(batch_size, num_channels, h, w), None
 
 

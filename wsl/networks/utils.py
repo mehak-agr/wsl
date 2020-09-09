@@ -16,5 +16,9 @@ def box_to_map(boxes: Dict, column: str, org_size: Tuple[int], new_size: Tuple[i
     for box in boxes:
         if box[column] == 0:
             break
-        mask[int(box['y1'] * new_size[0] / org_size[0]):int(box['y2'] * new_size[0] / org_size[0]), int(box['x1'] * new_size[1] / org_size[1]):int(box['x2'] * new_size[1] / org_size[1])] = 1
+        y1 = int(box['y1'] * new_size[0] / org_size[0])
+        y2 = int(box['y2'] * new_size[0] / org_size[0])
+        x1 = int(box['x1'] * new_size[0] / org_size[0])
+        x2 = int(box['x2'] * new_size[0] / org_size[0])
+        mask[y1:y2, x1:x2] = 1
     return mask

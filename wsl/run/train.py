@@ -144,7 +144,7 @@ def main(debug: bool,
     print('done')
     # ------------------------------------------------------
 
-    while (checkpoint['epoch'] - best_epoch <= patience):
+    while (checkpoint['epoch'] - best_epoch <= patience) and checkpoint['epoch'] < 500:
         start = time.time()
         checkpoint['epoch'] += 1
         print('Epoch:', checkpoint['epoch'], '-Training')
@@ -214,11 +214,11 @@ def main(debug: bool,
         'learning_rate': lr,
         'batchsize': batchsize,
         'balanced': balanced,
-        'maps': maps,
-        'alpha': alpha,
-        'k': k,
+        'maps': maps if wildcat else None,
+        'alpha': alpha if wildcat else None,
+        'k': k if wildcat else None,
         'regression': regression,
-        'error_range': error_range,
+        'error_range': error_range if regression else None,
         'best_epoch': best_epoch,
         'best_loss': best_loss,
         'rmetric': checkpoint['test_rmetric_all'][best_epoch - 1],

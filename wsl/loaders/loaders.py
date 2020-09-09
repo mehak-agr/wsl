@@ -16,7 +16,6 @@ from monai.transforms import (
     ToTensor
 )
 import torch
-
 from wsl.locations import wsl_data_dir, wsl_csv_dir
 
 
@@ -81,7 +80,7 @@ class Loader(Dataset):
             if pi.strip() == 'MONOCHROME1':
                 img = -img
         img = (img - np.min(img)) / (np.max(img) - np.min(img))
-        img = np.expand_dims(img, axis = 0)
+        img = np.expand_dims(img, axis=0)
 
         return img.astype(np.float32)
 
@@ -98,4 +97,3 @@ class Loader(Dataset):
 
     def __len__(self):
         return len(self.names)
-
