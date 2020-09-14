@@ -1,5 +1,6 @@
 # Start with the base CUDA image
-FROM pytorch/pytorch:1.5.1-cuda10.1-cudnn7-runtime
+# FROM pytorch/pytorch:1.5.1-cuda10.1-cudnn7-runtime
+FROM projectmonai/monai
 
 WORKDIR /
 

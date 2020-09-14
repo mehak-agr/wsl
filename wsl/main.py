@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from argparse import ArgumentParser
-from wsl.run import train, wild
+from wsl.run import train, wild, ood
 
 
 def main():
@@ -75,10 +75,18 @@ def main():
 
     train_parser.set_defaults(func=train.main)
 
-    # summary - the main testing routine
+    # Wild - the main wild map calculating routine
     wild_parser = subparsers.add_parser('wild', help='Summarize all wild maps results for models')
     wild_parser.add_argument('--store', action='store_true')
     wild_parser.set_defaults(func=wild.main)
+
+    # OOD - the main out of order distribution testing routine
+    ood_parser = subparsers.add_parser('ood', help='Out of order distribution')
+
+    # Arguments
+    ood_parser.add_argument('--out_data', type=str, default='chexpert',
+                            help='Name of the out distribution')
+    ood_parser.set_defaults(func=ood.main)
 
     # Run the parsers
     args = top_parser.parse_args()
