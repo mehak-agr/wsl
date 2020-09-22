@@ -5,7 +5,7 @@ from typing import Any
 from sklearn.covariance import EmpiricalCovariance
 
 from wsl.locations import wsl_model_dir
-from wsl.loaders.loaders import Loader
+from wsl.loaders.class_loaders import Loader
 import torch
 from torch.utils.data import DataLoader
 

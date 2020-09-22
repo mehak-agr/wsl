@@ -2,7 +2,7 @@
 from torch import nn
 from torchvision import models
 from typing import Any, Dict
-from wsl.networks.pooling import ClassWisePool, WildcatPool2d
+from wsl.networks.medinet.pooling import ClassWisePool, WildcatPool2d
 
 
 class Architecture(nn.Module):
@@ -81,7 +81,7 @@ class Architecture(nn.Module):
             self.classifier = nn.Linear(in_ftrs, classes)
 
     # function to extact the features for detecting ood
-    # if needed built a recursive function rather than just two levels
+    # if needed build a recursive function rather than just two levels
     def register_forward_hooks(self, net: Any, hook: Any, layer_names: Dict[str, Any]):
         handles = []
         for name, layer in net._modules.items():

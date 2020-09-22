@@ -12,9 +12,9 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 
-from wsl.networks.architecture import Architecture
-from wsl.networks.engine import engine
-from wsl.loaders.loaders import Loader
+from wsl.networks.medinet.architecture import Architecture
+from wsl.networks.medinet.engine import engine
+from wsl.loaders.class_loaders import Loader
 
 
 def main(debug: bool,
@@ -38,31 +38,40 @@ def main(debug: bool,
          alpha: float,
          k: int,
          regression: bool,
-         error_range: int):
+         error_range: int,
+         ID: str):
 
     # ------------------------------------------------------
     print('Initializing model...', end='')
     if resume:
         assert len(wsl_model_dir.glob(f'*{name}')) == 1
         full_mname = wsl_model_dir.glob(f'*{name}')[0]
+        mname = str(full_mname).split('_')[-1]
     else:
-        try:
-            # Get a random word to use as a more readable name
-            response = requests.get("https://random-word-api.herokuapp.com/word")
-            assert response.status_code == 200
-            mname = response.json()[0]
-        except Exception:
-            # As a fallback use the date and time
-            mname = datetime.datetime.now().strftime('%d_%m_%H_%M_%S')
+        if debug:
+            mname = 'debug'
 
-        full_mname = (('debug_' if debug else '') +
-                      data + '_' + col_name + '_' +
+        elif ID == 'placeholder':
+            try:
+                # Get a random word to use as a more readable name
+                response = requests.get("https://random-word-api.herokuapp.com/word")
+                assert response.status_code == 200
+                mname = response.json()[0]
+            except Exception:
+                # As a fallback use the date and time
+                mname = datetime.datetime.now().strftime('%d_%m_%H_%M_%S')
+
+        else:
+            mname = ID
+
+        full_mname = (data + '_' + col_name + '_' +
                       f'lr{lr}_bs{batchsize}_{optim}' +
                       ('_pre' if pretrained else '') +
                       ('_bal' if balanced else '') + '_' +
                       f'{network}{depth}' +
                       (f'_wildcat_maps{maps}_alpha{alpha}_k{k}' if wildcat else '') + '_' +
                       mname)
+
         model_dir = wsl_model_dir / full_mname
     print('done')
     print('Model Name:', mname)

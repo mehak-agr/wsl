@@ -10,8 +10,8 @@ import cv2
 from sklearn.metrics import roc_auc_score
 
 from wsl.locations import wsl_model_dir, wsl_summary_dir
-from wsl.loaders.loaders import Loader
-from wsl.networks.utils import box_to_map
+from wsl.loaders.class_loaders import Loader
+from wsl.networks.medinet.utils import box_to_map
 
 
 # -

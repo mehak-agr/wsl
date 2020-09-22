@@ -23,7 +23,7 @@ def main():
     # Add parsers for sub-commands one by one
 
     # Train - the main training routine
-    train_parser = subparsers.add_parser('train', help='Train a model')
+    train_parser = subparsers.add_parser('medinet', help='Train a model')
 
     # Type of dataset
     train_parser.add_argument('--debug', action='store_true',
@@ -68,10 +68,14 @@ def main():
     train_parser.add_argument('--k', default=1, type=float,
                               help='local pixels choosen')
 
-    # Regression Parameters
+    # Regression parameters
     train_parser.add_argument('--regression', action='store_true')
     train_parser.add_argument('--error_range', default=4, type=int,
                               help='absolute error allowed')
+    
+    # Identification parameter
+    train_parser.add_argument('--ID', type=str, default='placeholder',
+                              help='Special ID to identify a set of models')
 
     train_parser.set_defaults(func=train.main)
 

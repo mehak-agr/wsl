@@ -2,7 +2,7 @@
 import time
 from typing import Dict, Any
 import numpy as np
-from wsl.networks.utils import regression_accuracy
+from wsl.networks.medinet.utils import regression_accuracy
 from sklearn.metrics import r2_score
 from monai.metrics import compute_roc_auc, compute_confusion_metric
 import torch
