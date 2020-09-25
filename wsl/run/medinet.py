@@ -19,7 +19,7 @@ from wsl.loaders.class_loaders import Loader
 
 def main(debug: bool,
          data: str,
-         col_name: str,
+         column: str,
          extension: str,
          classes: int,
          network: str,
@@ -64,7 +64,7 @@ def main(debug: bool,
         else:
             mname = ID
 
-        full_mname = (data + '_' + col_name + '_' +
+        full_mname = (data + '_' + column + '_' +
                       f'lr{lr}_bs{batchsize}_{optim}' +
                       ('_pre' if pretrained else '') +
                       ('_bal' if balanced else '') + '_' +
@@ -83,7 +83,7 @@ def main(debug: bool,
                            split='train',
                            extension=extension,
                            classes=classes,
-                           col_name=col_name,
+                           column=column,
                            regression=regression,
                            debug=debug)
     train_loader = DataLoader(  # type: ignore
@@ -95,7 +95,7 @@ def main(debug: bool,
                           split='valid',
                           extension=extension,
                           classes=classes,
-                          col_name=col_name,
+                          column=column,
                           regression=regression,
                           debug=debug)
     test_loader = DataLoader(  # type: ignore
@@ -212,7 +212,7 @@ def main(debug: bool,
         'name': mname,
         'time': datetime.datetime.now().strftime('%d_%m_%H_%M_%S'),
         'data': data,
-        'column': col_name,
+        'column': column,
         'extension': extension,
         'classes': classes,
         'network': network,

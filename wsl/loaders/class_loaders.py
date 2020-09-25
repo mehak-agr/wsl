@@ -21,7 +21,7 @@ from wsl.locations import wsl_data_dir, wsl_csv_dir
 
 class Loader(Dataset):
     def __init__(self, data: str, split: str, extension: str,
-                 classes: int, col_name: str,
+                 classes: int, column: str,
                  regression: bool, debug: bool = False):
 
         if regression and classes != 1:
@@ -32,20 +32,20 @@ class Loader(Dataset):
         self.data = data
         self.classes = classes
 
-        known_extensions = {'rsna': 'dcm', 'chexpert': 'jpg'}
+        known_extensions = {'rsna': 'dcm', 'chexpert': 'jpg', 'chestxray8': 'png', 'siim': 'dcm'}
         if data in known_extensions.keys():
             self.extension = known_extensions[data]
         else:
             self.extension = extension
 
-        df = pd.read_csv(wsl_csv_dir / data / 'info.csv', converters={col_name: literal_eval})
+        df = pd.read_csv(wsl_csv_dir / data / 'info.csv', converters={column: literal_eval})
         self.df = df
         df = df.drop_duplicates(subset='Id', keep='first', ignore_index=True)
         Ids = pd.read_csv(wsl_csv_dir / data / f'{split}.csv').Id.tolist()
         df = df[df.Id.isin(Ids)]
 
         self.names = df.Id.to_list()
-        self.labels = df[col_name].tolist()
+        self.labels = df[column].tolist()
 
         if debug:
             self.names = self.names[0:100]
@@ -58,8 +58,8 @@ class Loader(Dataset):
             ToTensor()])
 
         if regression:
-            self.lmax = df[col_name].max()
-            self.lmin = df[col_name].min()
+            self.lmax = df[column].max()
+            self.lmin = df[column].min()
             self.labels = [[round((x - self.lmin) / self.lmax, 2)] for x in self.labels]
         else:
             if classes == 1:
@@ -71,14 +71,15 @@ class Loader(Dataset):
             self.pos_weight = [round((len(col) - sum(col)) / sum(col), 2) for col in zip(*self.labels)]
 
     def load_image(self, path: Path):
-        if self.extension == 'jpg':
-            img = skimage.io.imread(path)
-        else:
+        if self.extension == 'dcm':
             ref = pydicom.dcmread(path)
             img = ref.pixel_array
             pi = ref.PhotometricInterpretation
             if pi.strip() == 'MONOCHROME1':
                 img = -img
+        else:
+            img = skimage.io.imread(path, as_gray=True)
+
         img = (img - np.min(img)) / (np.max(img) - np.min(img))
         img = np.expand_dims(img, axis=0)
 

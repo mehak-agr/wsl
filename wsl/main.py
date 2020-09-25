@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from argparse import ArgumentParser
-from wsl.run import train, wild, ood
+from wsl.run import medinet, wild, ood
 
 
 def main():
@@ -22,62 +22,47 @@ def main():
 
     # Add parsers for sub-commands one by one
 
-    # Train - the main training routine
-    train_parser = subparsers.add_parser('medinet', help='Train a model')
+    # medinet - the main medineting routine
+    medinet_parser = subparsers.add_parser('medinet', help='medinet a model')
 
     # Type of dataset
-    train_parser.add_argument('--debug', action='store_true',
-                              help='In debugging mode, runs for just 10 sample images.')
-    train_parser.add_argument('--data', type=str, default='rsna',
-                              help='Type of dataset')
-    train_parser.add_argument('--col_name', type=str, default='Pneumonia',
-                              help='Name of the column that contains ground truth in info.csv')
-    train_parser.add_argument('--extension', type=str, default='dcm')
-    train_parser.add_argument('--classes', type=int, default=1)
+    medinet_parser.add_argument('--debug', action='store_true', help='In debugging mode, runs for just 10 sample images.')
+    medinet_parser.add_argument('--data', type=str, default='rsna', help='Type of dataset')
+    medinet_parser.add_argument('--column', type=str, default='Pneumonia', help='Name of the column that contains ground truth in info.csv')
+    medinet_parser.add_argument('--extension', type=str, default='dcm')
+    medinet_parser.add_argument('--classes', type=int, default=1)
 
     # Type of model
-    train_parser.add_argument('--network', type=str, default='densenet',
-                              help='Choose - densenet/resnet/vgg')
-    train_parser.add_argument('--depth', type=int, default=121,
-                              help='Model depth')
-    train_parser.add_argument('--wildcat', action='store_true',
-                              help='Add wildcat layers to network')
-    train_parser.add_argument('--pretrained', action='store_true',
-                              help='Use pretrianed network')
-    train_parser.add_argument('--optim', type=str, default='adam',
-                              help='Choose - sgd/adam')
+    medinet_parser.add_argument('--network', type=str, default='densenet', help='Choose - densenet/resnet/vgg')
+    medinet_parser.add_argument('--depth', type=int, default=121, help='Model depth')
+    medinet_parser.add_argument('--wildcat', action='store_true', help='Add wildcat layers to network')
+    medinet_parser.add_argument('--pretrained', action='store_true', help='Use pretrianed network')
+    medinet_parser.add_argument('--optim', type=str, default='adam', help='Choose - sgd/adam')
 
     # For resuming model
-    train_parser.add_argument('--resume', action='store_true',
-                              help='Resume network')
-    train_parser.add_argument('--name', type=str,
-                              help='Model name to resume')
+    medinet_parser.add_argument('--resume', action='store_true', help='Resume network')
+    medinet_parser.add_argument('--name', type=str, help='Model name to resume')
 
     # General parameters
-    train_parser.add_argument('--lr', type=float, default=1e-6)
-    train_parser.add_argument('--batchsize', type=int, default=64)
-    train_parser.add_argument('--workers', type=int, default=4)
-    train_parser.add_argument('--patience', type=int, default=10)
-    train_parser.add_argument('--balanced', action='store_true')
+    medinet_parser.add_argument('--lr', type=float, default=1e-6)
+    medinet_parser.add_argument('--batchsize', type=int, default=64)
+    medinet_parser.add_argument('--workers', type=int, default=4)
+    medinet_parser.add_argument('--patience', type=int, default=10)
+    medinet_parser.add_argument('--balanced', action='store_true')
 
     # Wildcat parameters
-    train_parser.add_argument('--maps', default=1, type=int,
-                              help='maps per class')
-    train_parser.add_argument('--alpha', default=0.0, type=float,
-                              help='Global Average Pooling layer weight')
-    train_parser.add_argument('--k', default=1, type=float,
-                              help='local pixels choosen')
+    medinet_parser.add_argument('--maps', default=1, type=int, help='maps per class')
+    medinet_parser.add_argument('--alpha', default=0.0, type=float, help='Global Average Pooling layer weight')
+    medinet_parser.add_argument('--k', default=1, type=float, help='local pixels choosen')
 
     # Regression parameters
-    train_parser.add_argument('--regression', action='store_true')
-    train_parser.add_argument('--error_range', default=4, type=int,
-                              help='absolute error allowed')
+    medinet_parser.add_argument('--regression', action='store_true')
+    medinet_parser.add_argument('--error_range', default=4, type=int, help='absolute error allowed')
     
     # Identification parameter
-    train_parser.add_argument('--ID', type=str, default='placeholder',
-                              help='Special ID to identify a set of models')
+    medinet_parser.add_argument('--ID', type=str, default='placeholder', help='Special ID to identify a set of models')
 
-    train_parser.set_defaults(func=train.main)
+    medinet_parser.set_defaults(func=medinet.main)
 
     # Wild - the main wild map calculating routine
     wild_parser = subparsers.add_parser('wild', help='Summarize all wild maps results for models')
@@ -88,8 +73,7 @@ def main():
     ood_parser = subparsers.add_parser('ood', help='Out of order distribution')
 
     # Arguments
-    ood_parser.add_argument('--out_data', type=str, default='chexpert',
-                            help='Name of the out distribution')
+    ood_parser.add_argument('--out_data', type=str, default='chexpert', help='Name of the out distribution')
     ood_parser.set_defaults(func=ood.main)
 
     # Run the parsers

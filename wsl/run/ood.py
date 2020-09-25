@@ -30,7 +30,7 @@ def main(out_data: str = 'chexpert'):
                                split='train',
                                extension=configs['extension'],
                                classes=configs['classes'],
-                               col_name=configs['column'],
+                               column=configs['column'],
                                regression=configs['regression'])
         train_loader = DataLoader(  # type: ignore
             train_dataset, batch_size=configs['batchsize'], num_workers=4,
@@ -40,7 +40,7 @@ def main(out_data: str = 'chexpert'):
                                split='valid',
                                extension=configs['extension'],
                                classes=configs['classes'],
-                               col_name=configs['column'],
+                               column=configs['column'],
                                regression=configs['regression'])
         valid_loader = DataLoader(  # type: ignore
             valid_dataset, batch_size=configs['batchsize'], num_workers=4,
@@ -50,7 +50,7 @@ def main(out_data: str = 'chexpert'):
                              split='valid',
                              extension=configs['extension'],
                              classes=configs['classes'],
-                             col_name=configs['column'],
+                             column=configs['column'],
                              regression=configs['regression'])
         out_loader = DataLoader(  # type: ignore
             out_dataset, batch_size=configs['batchsize'], num_workers=4,

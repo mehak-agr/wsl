@@ -64,7 +64,7 @@ class Architecture(nn.Module):
             else:
                 raise ValueError('Unsupported model depth, must be one of 19')
             in_ftrs = model.features[34].out_channels
-            pool_size = model.avgpool.output_size
+            pool_size = 1
             self.features = model.features
 
         else:

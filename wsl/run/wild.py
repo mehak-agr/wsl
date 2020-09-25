@@ -34,7 +34,7 @@ def main(store: bool = False):
                              split='valid',
                              extension=configs['extension'],
                              classes=configs['classes'],
-                             col_name=configs['column'],
+                             column=configs['column'],
                              regression=configs['regression'])
             print(configs)
 
