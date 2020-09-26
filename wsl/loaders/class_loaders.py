@@ -16,7 +16,7 @@ from monai.transforms import (
     ToTensor
 )
 import torch
-from wsl.locations import wsl_data_dir, wsl_csv_dir
+from wsl.locations import wsl_data_dir, wsl_csv_dir, known_extensions
 
 
 class Loader(Dataset):
@@ -32,13 +32,12 @@ class Loader(Dataset):
         self.data = data
         self.classes = classes
 
-        known_extensions = {'rsna': 'dcm', 'chexpert': 'jpg', 'chestxray8': 'png', 'siim': 'dcm'}
         if data in known_extensions.keys():
             self.extension = known_extensions[data]
         else:
             self.extension = extension
 
-        df = pd.read_csv(wsl_csv_dir / data / 'info.csv', converters={column: literal_eval})
+        df = pd.read_csv(wsl_csv_dir / data / 'info.csv', converters={column: literal_eval, 'box':literal_eval})
         self.df = df
         df = df.drop_duplicates(subset='Id', keep='first', ignore_index=True)
         Ids = pd.read_csv(wsl_csv_dir / data / f'{split}.csv').Id.tolist()
