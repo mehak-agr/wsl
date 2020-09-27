@@ -40,7 +40,7 @@ class Loader(Dataset):
             self.names = self.names[0:100]
 
         self.image_transforms = Compose([
-            Resize((224, 224)),
+            # Resize((224, 224)),
             RepeatChannel(repeats=3),
             CastToType(dtype=np.float32),
             ToTensor()])
@@ -67,7 +67,7 @@ class Loader(Dataset):
             boxes = -1 * torch.ones((self.max_boxes, 5))
         else:
             boxes = torch.Tensor(self.df[self.df.Id == name].box.to_list())
-            boxes = boxes * 224 / size
+            # boxes = boxes * 224 / size
             labels = torch.zeros((len(boxes), 1))  # Box Label = 0 for positive
         
             boxes = torch.cat((boxes, labels), dim=1)

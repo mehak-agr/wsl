@@ -38,4 +38,5 @@ def engine(loader: Any, checkpoint: Dict[str, Any],
         reg_loss = np.mean(overall_reg_loss)
         loss = np.mean(overall_loss)
         summary = (f'Epoch Summary- Class Loss:{round(class_loss, 3)}, Reg Loss: {round(reg_loss, 3)}, Loss:{round(loss, 3)}')
+        print(summary)
         return class_loss, reg_loss, loss, summary

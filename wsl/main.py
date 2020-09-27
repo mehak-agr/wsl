@@ -84,7 +84,7 @@ def main():
 
     # General parameters
     retinanet_parser.add_argument('--lr', type=float, default=1e-6)
-    retinanet_parser.add_argument('--batchsize', type=int, default=64)
+    retinanet_parser.add_argument('--batchsize', type=int, default=8)
     retinanet_parser.add_argument('--workers', type=int, default=4)
     retinanet_parser.add_argument('--patience', type=int, default=10)
 
