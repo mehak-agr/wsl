@@ -61,16 +61,19 @@ class Loader(Dataset):
         return img.astype(np.float32)
     
     def load_boxes(self, name: str, size: float):
-        boxes = self.df[self.df == name].box.to_list()
-        boxes += [-1, -1, -1, -1] * (self.max_boxes - len(boxes))
-        boxes = torch.Tensor(boxes)
-        boxes = boxes * 224 / size
+        labels = self.df[self.df.Id == name][self.column].to_list()
         
-        labels = self.df[self.df == name][self.column].to_list()
-        labels += [0] * (self.max_boxes - len(boxes))
-        labels = torch.Tensor(labels) - 1
+        if sum(labels) == 0:
+            boxes = -1 * torch.ones((self.max_boxes, 5))
+        else:
+            boxes = torch.Tensor(self.df[self.df.Id == name].box.to_list())
+            boxes = boxes * 224 / size
+            labels = torch.zeros((len(boxes), 1))  # Box Label = 0 for positive
         
-        boxes = torch.cat(boxes, labels, dim=1)
+            boxes = torch.cat((boxes, labels), dim=1)
+            filler = [[-1, -1, -1, -1, -1]] * (self.max_boxes - len(boxes))
+            boxes = torch.cat((boxes, torch.Tensor(filler)))
+
         return boxes
     
     def __getitem__(self, idx):
@@ -78,12 +81,10 @@ class Loader(Dataset):
         path = self.datapath / f'{name}.{self.extension}'
 
         img = self.load_image(path)
-        size = img.shape.mean()
+        size = int((img.shape[0] + img.shape[1]) / 2)
         img = self.image_transforms(img)
         
         boxes = self.load_boxes(name, size)
-        print(boxes)
-
         return img, boxes
 
     def __len__(self):

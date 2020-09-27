@@ -12,7 +12,6 @@ def calc_iou(a, b):
     ih = torch.clamp(ih, min=0)
 
     ua = torch.unsqueeze((a[:, 2] - a[:, 0]) * (a[:, 3] - a[:, 1]), dim=1) + area - iw * ih
-
     ua = torch.clamp(ua, min=1e-8)
 
     intersection = iw * ih
@@ -22,7 +21,6 @@ def calc_iou(a, b):
     return IoU
 
 class FocalLoss(nn.Module):
-    #def __init__(self):
 
     def forward(self, classifications, regressions, anchors, annotations):
         alpha = 0.25
@@ -33,10 +31,10 @@ class FocalLoss(nn.Module):
 
         anchor = anchors[0, :, :]
 
-        anchor_widths  = anchor[:, 2] - anchor[:, 0]
+        anchor_widths = anchor[:, 2] - anchor[:, 0]
         anchor_heights = anchor[:, 3] - anchor[:, 1]
-        anchor_ctr_x   = anchor[:, 0] + 0.5 * anchor_widths
-        anchor_ctr_y   = anchor[:, 1] + 0.5 * anchor_heights
+        anchor_ctr_x = anchor[:, 0] + 0.5 * anchor_widths
+        anchor_ctr_y = anchor[:, 1] + 0.5 * anchor_heights
 
         for j in range(batch_size):
 
@@ -45,7 +43,7 @@ class FocalLoss(nn.Module):
 
             bbox_annotation = annotations[j, :, :]
             bbox_annotation = bbox_annotation[bbox_annotation[:, 4] != -1]
-            
+
             classification = torch.clamp(classification, 1e-4, 1.0 - 1e-4)
 
             if bbox_annotation.shape[0] == 0:
@@ -62,7 +60,7 @@ class FocalLoss(nn.Module):
                     cls_loss = focal_weight * bce
                     classification_losses.append(cls_loss.sum())
                     regression_losses.append(torch.tensor(0).float())
-                    
+
                 else:
                     alpha_factor = torch.ones(classification.shape) * alpha
 
@@ -76,7 +74,7 @@ class FocalLoss(nn.Module):
                     cls_loss = focal_weight * bce
                     classification_losses.append(cls_loss.sum())
                     regression_losses.append(torch.tensor(0).float())
-                    
+
                 continue
 
             IoU = calc_iou(anchors[0, :, :], bbox_annotation[:, :4]) # num_anchors x num_annotations
@@ -134,13 +132,13 @@ class FocalLoss(nn.Module):
                 anchor_ctr_x_pi = anchor_ctr_x[positive_indices]
                 anchor_ctr_y_pi = anchor_ctr_y[positive_indices]
 
-                gt_widths  = assigned_annotations[:, 2] - assigned_annotations[:, 0]
+                gt_widths = assigned_annotations[:, 2] - assigned_annotations[:, 0]
                 gt_heights = assigned_annotations[:, 3] - assigned_annotations[:, 1]
-                gt_ctr_x   = assigned_annotations[:, 0] + 0.5 * gt_widths
-                gt_ctr_y   = assigned_annotations[:, 1] + 0.5 * gt_heights
+                gt_ctr_x = assigned_annotations[:, 0] + 0.5 * gt_widths
+                gt_ctr_y = assigned_annotations[:, 1] + 0.5 * gt_heights
 
                 # clip widths to 1
-                gt_widths  = torch.clamp(gt_widths, min=1)
+                gt_widths = torch.clamp(gt_widths, min=1)
                 gt_heights = torch.clamp(gt_heights, min=1)
 
                 targets_dx = (gt_ctr_x - anchor_ctr_x_pi) / anchor_widths_pi

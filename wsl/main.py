@@ -74,9 +74,7 @@ def main():
     retinanet_parser.add_argument('--classes', type=int, default=1)
 
     # Type of model
-    retinanet_parser.add_argument('--network', type=str, default='densenet', help='Choose - densenet/resnet/vgg')
-    retinanet_parser.add_argument('--depth', type=int, default=121, help='Model depth')
-    retinanet_parser.add_argument('--wildcat', action='store_true', help='Add wildcat layers to network')
+    retinanet_parser.add_argument('--depth', type=int, default=101, help='Model depth')
     retinanet_parser.add_argument('--pretrained', action='store_true', help='Use pretrianed network')
     retinanet_parser.add_argument('--optim', type=str, default='adam', help='Choose - sgd/adam')
 
@@ -89,17 +87,7 @@ def main():
     retinanet_parser.add_argument('--batchsize', type=int, default=64)
     retinanet_parser.add_argument('--workers', type=int, default=4)
     retinanet_parser.add_argument('--patience', type=int, default=10)
-    retinanet_parser.add_argument('--balanced', action='store_true')
 
-    # Wildcat parameters
-    retinanet_parser.add_argument('--maps', default=1, type=int, help='maps per class')
-    retinanet_parser.add_argument('--alpha', default=0.0, type=float, help='Global Average Pooling layer weight')
-    retinanet_parser.add_argument('--k', default=1, type=float, help='local pixels choosen')
-
-    # Regression parameters
-    retinanet_parser.add_argument('--regression', action='store_true')
-    retinanet_parser.add_argument('--error_range', default=4, type=int, help='absolute error allowed')
-    
     # Identification parameter
     retinanet_parser.add_argument('--ID', type=str, default='placeholder', help='Special ID to identify a set of models')
     retinanet_parser.set_defaults(func=retinanet.main)

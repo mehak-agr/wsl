@@ -22,9 +22,7 @@ def main(debug: bool,
          column: str,
          extension: str,
          classes: int,
-         network: str,
          depth: int,
-         wildcat: bool,
          pretrained: bool,
          optim: str,
          resume: bool,
@@ -33,12 +31,6 @@ def main(debug: bool,
          batchsize: int,
          workers: int,
          patience: int,
-         balanced: bool,
-         maps: int,
-         alpha: float,
-         k: int,
-         regression: bool,
-         error_range: int,
          ID: str):
 
     # ------------------------------------------------------
@@ -67,9 +59,7 @@ def main(debug: bool,
         full_mname = (data + '_' + column + '_' +
                       f'lr{lr}_bs{batchsize}_{optim}' +
                       ('_pre' if pretrained else '') +
-                      ('_bal' if balanced else '') + '_' +
-                      f'{network}{depth}' +
-                      (f'_wildcat_maps{maps}_alpha{alpha}_k{k}' if wildcat else '') + '_' +
+                      f'retinanet{depth}' +
                       mname)
 
         model_dir = wsl_model_dir / full_mname
@@ -84,7 +74,6 @@ def main(debug: bool,
                            extension=extension,
                            classes=classes,
                            column=column,
-                           regression=regression,
                            debug=debug)
     train_loader = DataLoader(  # type: ignore
         train_dataset, batch_size=batchsize, num_workers=workers, pin_memory=True, shuffle=True
@@ -96,37 +85,32 @@ def main(debug: bool,
                           extension=extension,
                           classes=classes,
                           column=column,
-                          regression=regression,
                           debug=debug)
     test_loader = DataLoader(  # type: ignore
         test_dataset, batch_size=batchsize, num_workers=workers, pin_memory=True, shuffle=True
     )
     print('done')
 
-    if regression:
-        reg_args = {'max': train_dataset.lmax,
-                    'min': train_dataset.lmin,
-                    'error_range': error_range}
-    else:
-        reg_args = None
-
     if classes > 1:
         print('Class List: ', train_dataset.class_names)
 
     # ------------------------------------------------------
-    print('Initializing optim/criterion...', end='')
+    print('Initializing optim/checkpoint...', end='')
     if resume:
         checkpoint = torch.load(full_mname / 'best.pt', map_location='cuda:0' if torch.cuda.is_available() else 'cpu')
     else:
-        if regression:
-            criterion = nn.MSELoss()
-        elif balanced:
-            criterion = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor(train_dataset.pos_weight))
+        if depth == 18:
+            model = architecture.resnet18(classes, pretrained)
+        elif depth == 34:
+            model = architecture.resnet34(classes, pretrained)
+        elif depth == 50:
+            model = architecture.resnet50(classes, pretrained)
+        elif depth == 101:
+            model = architecture.resnet101(classes, pretrained)
+        elif depth == 152:
+            model = architecture.resnet152(classes, pretrained)
         else:
-            criterion = nn.BCEWithLogitsLoss()
-        criterion = criterion.cuda()
-
-        model = Architecture(network, depth, wildcat, classes, maps, alpha, k, pretrained)
+            raise ValueError('Unsupported model depth, must be one of 18, 34, 50, 101, 152')
         model = nn.DataParallel(model).cuda()
 
         if optim == 'sgd':
@@ -139,13 +123,14 @@ def main(debug: bool,
         checkpoint = {
             'model': model,
             'optimizer': optimizer,
-            'criterion': criterion,
             'epoch': 0,
             'loss': 100,
             'train_loss_all': [],
             'test_loss_all': [],
-            'train_rmetric_all': [],
-            'test_rmetric_all': []
+            'train_class_loss_all': [],
+            'test_class_loss_all': [],
+            'train_reg_loss_all': [],
+            'test_reg_loss_all': []
         }
 
     best_epoch = checkpoint['epoch']
@@ -158,17 +143,17 @@ def main(debug: bool,
         checkpoint['epoch'] += 1
         print('Epoch:', checkpoint['epoch'], '-Training')
         checkpoint['model'].train()
-        checkpoint['loss'], rmetric, summary_train = engine(train_loader, checkpoint,
-                                                            batchsize, classes, reg_args, is_train=True)
+        class_loss, reg_loss, checkpoint['loss'], summary_train = engine(train_loader, checkpoint, batchsize, classes, is_train=True)
         checkpoint['train_loss_all'].append(checkpoint['loss'])
-        checkpoint['train_rmetric_all'].append(rmetric)
+        checkpoint['train_class_loss_all'].append(class_loss)
+        checkpoint['train_reg_loss_all'].append(reg_loss)
 
         print('Epoch:', checkpoint['epoch'], '-Testing')
-        checkpoint['model'].eval()
-        checkpoint['loss'], rmetric, summary_test = engine(test_loader, checkpoint,
-                                                           batchsize, classes, reg_args, is_train=False)
+        # checkpoint['model'].eval() - In eval mode model prints boxes
+        class_loss, reg_loss, checkpoint['loss'], summary_test = engine(test_loader, checkpoint, batchsize, classes, is_train=False)
         checkpoint['test_loss_all'].append(checkpoint['loss'])
-        checkpoint['test_rmetric_all'].append(rmetric)
+        checkpoint['test_class_loss_all'].append(class_loss)
+        checkpoint['test_reg_loss_all'].append(reg_loss)
 
         os.makedirs(model_dir, exist_ok=True)
         torch.save(checkpoint, model_dir / 'current.pt')
@@ -186,18 +171,24 @@ def main(debug: bool,
             file.write(f'Epoch: {epoch} \n Train:{summary_train} \n Test:{summary_test}')
 
         plt.figure(figsize=(12, 18))
-        plt.subplot(2, 1, 1)
+        plt.subplot(3, 1, 1)
         plt.plot(checkpoint['train_loss_all'], label='Train loss')
         plt.plot(checkpoint['test_loss_all'], label='Valid loss')
         plt.legend()
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
-        plt.subplot(2, 1, 2)
-        plt.plot(checkpoint['train_rmetric_all'], label='Train rmetric')
-        plt.plot(checkpoint['test_rmetric_all'], label='Test rmetric')
+        plt.subplot(3, 1, 2)
+        plt.plot(checkpoint['train_class_loss_all'], label='Train Class loss')
+        plt.plot(checkpoint['test_class_loss_all'], label='Valid Class loss')
         plt.legend()
         plt.xlabel('Epoch')
-        plt.ylabel('rmetric')
+        plt.ylabel('Class Loss'),
+        plt.subplot(3, 1, 3)
+        plt.plot(checkpoint['train_reg_loss_all'], label='Train Reg loss')
+        plt.plot(checkpoint['test_reg_loss_all'], label='Valid Reg loss')
+        plt.legend()
+        plt.xlabel('Epoch')
+        plt.ylabel('Reg Loss')
         plt.savefig(model_dir / 'graphs.png', dpi=300)
         plt.close()
 
@@ -215,22 +206,14 @@ def main(debug: bool,
         'column': column,
         'extension': extension,
         'classes': classes,
-        'network': network,
+        'network': 'retinanet',
         'depth': depth,
-        'wildcat': wildcat,
         'pretrained': pretrained,
         'optim': optim,
         'learning_rate': lr,
         'batchsize': batchsize,
-        'balanced': balanced,
-        'maps': maps if wildcat else None,
-        'alpha': alpha if wildcat else None,
-        'k': k if wildcat else None,
-        'regression': regression,
-        'error_range': error_range if regression else None,
         'best_epoch': best_epoch,
-        'best_loss': best_loss,
-        'rmetric': checkpoint['test_rmetric_all'][best_epoch - 1],
+        'best_loss': best_loss
     }
     with open(model_dir / 'configs.json', 'w') as fp:
         json.dump(configs, fp)

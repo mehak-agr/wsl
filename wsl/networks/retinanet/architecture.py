@@ -231,6 +231,7 @@ class ResNet(nn.Module):
     def forward(self, inputs):
 
         if self.training:
+            print('In train mode')
             img_batch, annotations = inputs
         else:
             img_batch = inputs
