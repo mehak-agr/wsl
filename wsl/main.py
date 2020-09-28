@@ -96,7 +96,6 @@ def main():
     wild_parser = subparsers.add_parser('wild', help='Summarize all wild maps results for models')
     wild_parser.add_argument('--name', type=str, default='all', help='all or specific model string')
     wild_parser.add_argument('--task', type=str, default='detect', help='detect/segment')
-    wild_parser.add_argument('--store', action='store_true')
     wild_parser.set_defaults(func=wild.main)
 
     # OOD - the main out of order distribution testing routine

@@ -57,9 +57,9 @@ def main(debug: bool,
             mname = ID
 
         full_mname = (data + '_' + column + '_' +
-                      f'lr{lr}_bs{batchsize}_{optim}' +
-                      ('_pre' if pretrained else '') +
-                      f'retinanet{depth}' +
+                      f'lr{lr}_bs{batchsize}_{optim}' + '_' +
+                      ('pre_' if pretrained else '') +
+                      f'retinanet{depth}' + '_' +
                       mname)
 
         model_dir = wsl_model_dir / full_mname

@@ -48,7 +48,7 @@ def mask2rle(img, width, height):
 
 def rle2mask(rle, mask):
     width, height = mask.shape
-    mask = mask.flatten
+    mask = mask.flatten()
     array = np.asarray([int(x) for x in rle.split()])
     starts = array[0::2]
     lengths = array[1::2]
