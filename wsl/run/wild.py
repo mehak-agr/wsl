@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 import json
 import cv2
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import average_precision_score
 
 from wsl.locations import wsl_model_dir, known_tasks
 from wsl.loaders.class_loaders import Loader
@@ -90,10 +90,11 @@ def main(name: str,
                     else:
                         print('Ground truth not available.')
 
-                    # plt.imshow(ground_map)
                     ground_map = cv2.resize(ground_map, new_size, interpolation=cv2.INTER_NEAREST).clip(0, 1)
-                    re_pred_map = cv2.resize(predicted_map[i], new_size, interpolation=cv2.INTER_AREA)
-                    score.append(roc_auc_score(ground_map.flatten(), re_pred_map.flatten()))
+                    re_pred_map = cv2.resize(predicted_map[i], new_size, interpolation=cv2.INTER_NEAREST).clip(0, 1)
+                    score.append(average_precision_score(ground_map.flatten(), re_pred_map.flatten()))
+                    plt.imshow(ground_map)
+                    plt.imshow(re_pred_map)
 
                 all_scores += score
                 if (len(all_scores) + 1) % 32 == 0:
@@ -103,5 +104,3 @@ def main(name: str,
         print('Wild Metric:', configs['wild_metric'])
         with open(path / 'configs.json', 'w') as fp:
             json.dump(configs, fp)
-
-

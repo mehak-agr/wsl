@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import cv2
 import pandas as pd
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import average_precision_score, roc_auc_score
 from wsl.networks.medinet.utils import box_to_map
 
 
@@ -83,7 +83,7 @@ def engine_boxes(loader: Any, checkpoint: Dict[str, Any]):
             predicted_map = box_to_map(boxes, np.zeros(org_size), scores)
             ground_map = cv2.resize(ground_map, new_size, interpolation=cv2.INTER_NEAREST).clip(0, 1)
             predicted_map = cv2.resize(predicted_map, new_size, interpolation=cv2.INTER_AREA).clip(0, 1)
-            map_scores.append(roc_auc_score(ground_map.flatten(), predicted_map.flatten()))
+            map_scores.append(average_precision_score(ground_map.flatten(), predicted_map.flatten()))
 
             speed = iter_num // (time.time() - start)
             print('Epoch:', checkpoint['epoch'], 'Iter:', iter_num, 'Score:', np.mean(map_scores), 'Speed:', int(speed), 'img/s', end='\r', flush=True)
