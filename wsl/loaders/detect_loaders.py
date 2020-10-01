@@ -64,8 +64,10 @@ class Loader(Dataset):
         labels = self.df[self.df.Id == name][self.column].to_list()
         
         if sum(labels) == 0:
+            label = 0
             boxes = -1 * torch.ones((self.max_boxes, 5))
         else:
+            label = 1
             boxes = torch.Tensor(self.df[self.df.Id == name].box.to_list())
             # boxes = boxes * 224 / size
             labels = torch.zeros((len(boxes), 1))  # Box Label = 0 for positive
@@ -74,7 +76,7 @@ class Loader(Dataset):
             filler = [[-1, -1, -1, -1, -1]] * (self.max_boxes - len(boxes))
             boxes = torch.cat((boxes, torch.Tensor(filler)))
 
-        return boxes
+        return boxes, label
     
     def __getitem__(self, idx):
         name = self.names[idx]
@@ -84,8 +86,8 @@ class Loader(Dataset):
         size = int((img.shape[0] + img.shape[1]) / 2)
         img = self.image_transforms(img)
         
-        boxes = self.load_boxes(name, size)
-        return img, boxes
+        boxes, label = self.load_boxes(name, size)
+        return img, boxes, label, name
 
     def __len__(self):
         return len(self.names)

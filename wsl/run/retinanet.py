@@ -5,6 +5,7 @@ import json
 import requests
 import datetime
 import matplotlib.pyplot as plt
+import pandas as pd
 
 from wsl.locations import wsl_model_dir
 
@@ -13,7 +14,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 from wsl.networks.retinanet import architecture
-from wsl.networks.retinanet.engine import engine
+from wsl.networks.retinanet.engine import engine, engine_boxes
 from wsl.loaders.detect_loaders import Loader
 
 
@@ -26,6 +27,7 @@ def main(debug: bool,
          pretrained: bool,
          optim: str,
          resume: bool,
+         results: bool,
          name: str,
          lr: float,
          batchsize: int,
@@ -33,13 +35,25 @@ def main(debug: bool,
          patience: int,
          ID: str):
 
+    
+    
     # ------------------------------------------------------
-    print('Initializing model...', end='')
     if resume:
-        assert len(wsl_model_dir.glob(f'*{name}')) == 1
-        full_mname = wsl_model_dir.glob(f'*{name}')[0]
-        mname = str(full_mname).split('_')[-1]
+        matching_models = list(wsl_model_dir.glob(f'*{name}'))
+        assert len(matching_models) == 1
+        model_dir = matching_models[0]
+        mname = str(model_dir).split('_')[-1]
+        print(mname)
+
+    elif results:
+        if 'retainet' in name:
+            matching_models = list(wsl_model_dir.glob(f'*{name}*/configs.json'))
+        else:
+            matching_models = list(wsl_model_dir.glob(f'*retinanet*{name}*/configs.json'))
+        model_dirs = [model_dir.parent for model_dir in matching_models]
+
     else:
+        print('Initializing model...', end='')
         if debug:
             mname = 'debug'
 
@@ -63,8 +77,8 @@ def main(debug: bool,
                       mname)
 
         model_dir = wsl_model_dir / full_mname
-    print('done')
-    print('Model Name:', mname)
+        print('done')
+        print('Model Name:', mname)
 
     # ------------------------------------------------------
     print('Initializing loaders...', end='', flush=True)
@@ -93,11 +107,31 @@ def main(debug: bool,
 
     if classes > 1:
         print('Class List: ', train_dataset.class_names)
+        
+    # ------------------------------------------------------
+    
+    if results:
+        for model_dir in model_dirs:
+            print('Initializing optim/checkpoint...')
+            checkpoint = torch.load(model_dir / 'best.pt', map_location='cuda:0' if torch.cuda.is_available() else 'cpu')
+            with open(model_dir / 'configs.json') as f:
+                configs = json.load(f)
+            print('Calculating box results...')
+            checkpoint['model'].eval()
+            df, rmetric, wild_metric = engine_boxes(test_dataset, checkpoint)
+            df.to_csv(model_dir / 'results.csv')
+            configs['rmetric'] = rmetric
+            configs['wild_metric'] = wild_metric
+            with open(model_dir / 'configs.json', 'w') as fp:
+                json.dump(configs, fp)
+            print('Finished:', rmetric, wild_metric)
+            print(f'You can find the calculated results at - {model_dir}/results.csv')
+        return
 
     # ------------------------------------------------------
     print('Initializing optim/checkpoint...', end='')
-    if resume:
-        checkpoint = torch.load(full_mname / 'best.pt', map_location='cuda:0' if torch.cuda.is_available() else 'cpu')
+    if resume or results:
+        checkpoint = torch.load(model_dir / 'best.pt', map_location='cuda:0' if torch.cuda.is_available() else 'cpu')
     else:
         if depth == 18:
             model = architecture.resnet18(classes, pretrained)
@@ -136,9 +170,11 @@ def main(debug: bool,
     best_epoch = checkpoint['epoch']
     best_loss = checkpoint['loss']
     print('done')
+
+        
     # ------------------------------------------------------
 
-    while (checkpoint['epoch'] - best_epoch <= patience) and checkpoint['epoch'] < 500:
+    while (checkpoint['epoch'] - best_epoch <= patience) and checkpoint['epoch'] < 150:
         start = time.time()
         checkpoint['epoch'] += 1
         print('Epoch:', checkpoint['epoch'], '-Training')
@@ -199,6 +235,12 @@ def main(debug: bool,
             print('You can find the trained model at -', model_dir)
             break
 
+    checkpoint = torch.load(model_dir / 'best.pt', map_location='cuda:0' if torch.cuda.is_available() else 'cpu')
+    df, rmetric, wild_metric = engine_boxes(test_dataset, checkpoint)
+    df.to_csv(model_dir / 'results.csv')
+    print('Finished:', rmetric)
+    print(f'You can find the calculated results at - {model_dir}/results.csv')
+    
     configs = {
         'name': mname,
         'time': datetime.datetime.now().strftime('%d_%m_%H_%M_%S'),
@@ -213,7 +255,9 @@ def main(debug: bool,
         'learning_rate': lr,
         'batchsize': batchsize,
         'best_epoch': best_epoch,
-        'best_loss': best_loss
+        'best_loss': best_loss,
+        'rmetric': rmetric,
+        'wild_metric': wild_metric
     }
     with open(model_dir / 'configs.json', 'w') as fp:
         json.dump(configs, fp)

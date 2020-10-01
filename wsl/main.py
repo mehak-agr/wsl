@@ -80,7 +80,8 @@ def main():
 
     # For resuming model
     retinanet_parser.add_argument('--resume', action='store_true', help='Resume network')
-    retinanet_parser.add_argument('--name', type=str, help='Model name to resume')
+    retinanet_parser.add_argument('--results', action='store_true', help='Compute box results csv')
+    retinanet_parser.add_argument('--name', type=str, help='Model name to resume or compute final box results')
 
     # General parameters
     retinanet_parser.add_argument('--lr', type=float, default=1e-6)
@@ -97,7 +98,7 @@ def main():
     wild_parser.add_argument('--name', type=str, default='all', help='all or specific model string')
     wild_parser.add_argument('--task', type=str, default='detect', help='detect/segment')
     wild_parser.set_defaults(func=wild.main)
-
+    
     # OOD - the main out of order distribution testing routine
     ood_parser = subparsers.add_parser('ood', help='Out of order distribution')
     ood_parser.add_argument('--out_data', type=str, default='chexpert', help='Name of the out distribution')

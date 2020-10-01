@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import numpy as np
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Any
 
 
 def regression_accuracy(true_labels, predicted_labels, error_range):
@@ -11,10 +11,12 @@ def regression_accuracy(true_labels, predicted_labels, error_range):
     return correct / len(true_labels)
 
 
-def box_to_map(boxes: List, mask):
+def box_to_map(boxes: List, mask, scores: Any=1):
     # box = [x1, y1, x2, y2]
-    for box in boxes:
-        mask[box[1]:box[3], box[0]:box[2]] = 1
+    if not isinstance(scores, list): 
+        scores = [scores] * len(boxes)
+    for idx, box in enumerate(boxes):
+        mask[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = scores[idx]
     return mask
 
 

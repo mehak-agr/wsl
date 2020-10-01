@@ -153,7 +153,7 @@ def main(debug: bool,
     print('done')
     # ------------------------------------------------------
 
-    while (checkpoint['epoch'] - best_epoch <= patience) and checkpoint['epoch'] < 500:
+    while (checkpoint['epoch'] - best_epoch <= patience) and checkpoint['epoch'] < 150:
         start = time.time()
         checkpoint['epoch'] += 1
         print('Epoch:', checkpoint['epoch'], '-Training')
