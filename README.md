@@ -5,15 +5,19 @@ What to change?
 
 Please use <user> variable to reflect your name <br />
 todo: make setting this a part of docker setup <br />
+    
 Add to the if-else bock to add the location of storage - maintainer recommends using full paths to avoid confusion <br />
 The paths added here can be called all over the repo, do not use actual paths anywhere else <br />
+
 Data directory structure: <br />
+
 Each image location is presumed to be as follows: <br />
 <wsl_data_dir> / <data> / <id>.<extension> <br />
 where, <br />
     <data> is specified as argument during run time itself - currently supports rsna and chexpert <br />
     <id> each unique study or image is accessed by this label - first column of each csv is Id - confirm in wsl_csv_dir <br />
     <extension> is also specified as argument during runtime - it is decoupled from id since each extension requires slightly different loading function <br />
+
 CSV directory structure: <br />
 <wsl_csv_dir> / <data> / <file_name>.csv <br />
 Each csv directory 4 main files - info, train, valid, test <br />
@@ -25,8 +29,10 @@ info.csv - first column is Id, the rest are ground truths <br />
          - todo: include support for multi-class regression and multi-class + multi-label ground truths <br />
 train.csv, valid.csv test.csv - single column csv which contains ids to use for current data split <br />
 original.csv - (optional) csv from which info.csv was derived <br />
+
 Model directory structure: <br />
 Please refer to wsl / wsl / train.py for how the models are named <br />
+
 Summary directory structure: <br />
 Used for storing combined results upon testing of all models - ease of comparison for different architectures and variants <br />
 
