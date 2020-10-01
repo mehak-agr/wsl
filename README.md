@@ -1,7 +1,6 @@
-# Weakly Supervised Detection
-Weakly Supervised Localization
+# Weakly Supervised Localization
 
-What to change?
+## What to change?
 
 Please use <user> variable to reflect your name <br />
 todo: make setting this a part of docker setup <br />
@@ -36,7 +35,7 @@ Please refer to wsl / wsl / train.py for how the models are named <br />
 Summary directory structure: <br />
 Used for storing combined results upon testing of all models - ease of comparison for different architectures and variants <br />
 
-How to run?
+## How to run?
 
 Login to the machine  
 make a folder A where your repository will reside  
