@@ -2,6 +2,9 @@
 
 ## What to change?
 
+### Step 1: 
+Go to wsl/locations.py
+
 Please use <user> variable to reflect your name <br />
 todo: make setting this a part of docker setup <br />
     
@@ -60,5 +63,5 @@ Both these locations can be edited in wsl/locations.py file
 
 To download RSNA data visit - https://www.kaggle.com/c/rsna-pneumonia-detection-challenge/data  
 
-Upcoming updates
+## Upcoming updates
 - UNet for segmentation
