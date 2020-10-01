@@ -9,7 +9,7 @@ In folder-A
 $ git clone https://github.com/mehak-agr/wsl.git  
 
 Make a docker  
-$ sudo docker run --gpus all --ipc=host -it -v /home/ben.bearce/mnt/:/data --name b_wsl projectmonai/monai:latest  
+$ sudo docker run --gpus all --ipc=host -it -v /home/mehak.aggarwal/mnt/:/data --name m_wsl projectmonai/monai:latest  
 
 Following steps happen inside the docker  
 
