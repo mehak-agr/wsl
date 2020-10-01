@@ -52,7 +52,8 @@ $ cd /data/2015P002510/...folder-A
 Install wsl as a package  
 $ pip install -e wsl  
 To train a model just use the following command  
-$ wsl medinet --debug  
+$ wsl medinet --debug
+You can find a comprehensive list of commands and arguments in wsl/main.py
 
 Your trained model will be here - /data/2015P002510/Mehak/git_wsl/models/  
 RSNA Data is here - /data/2015P002510/Mehak/git_wsl/data/rsna/  
