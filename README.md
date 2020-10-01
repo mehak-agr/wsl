@@ -4,18 +4,18 @@
 
 ### Data
 Each image location is presumed to be as follows: <br />
-<wsl_data_dir> / <data> / <id>.<extension> <br />
+wsl_data_dir / data / id.extension <br />
 where, <br />
-    <data> is specified as argument during run time itself - currently supports rsna and chexpert <br />
-    <id> each unique study or image is accessed by this label - first column of each csv is Id - confirm in wsl_csv_dir <br />
-    <extension> is also specified as argument during runtime - it is decoupled from id since each extension requires slightly different loading function <br />
+    data is specified as argument during run time itself - currently supports rsna and chexpert <br />
+    id each unique study or image is accessed by this label - first column of each csv is Id - confirm in wsl_csv_dir <br />
+    extension is also specified as argument during runtime - it is decoupled from id since each extension requires slightly different loading function <br />
         
 ### CSVs
-<wsl_csv_dir> / <data> / <file_name>.csv <br />
+wsl_csv_dir / data / file_name.csv <br />
 Each csv directory 4 main files - info, train, valid, test <br />
 info.csv - first column is Id, the rest are ground truths <br />
          - 0/1 for binary classification, simple integers for regression <br />
-         - for binary classification if the 0 and 1 are represent different characterstics, name the column <0>_<1> <br />
+         - for binary classification if the 0 and 1 are represent different characterstics, name the column 0_1 <br />
             e.g. Male_Female where 0 stands for Male and 1 for Female in the column <br />
          - for a > 1 classes, make a single column with a list of ground-truth labels for each Id <br />
          - todo: include support for multi-class regression and multi-class + multi-label ground truths <br />
@@ -30,8 +30,8 @@ Used for storing combined results upon testing of all models - ease of compariso
 
 ## What to change?
 
-Go to wsl/locations.py
-Use <user> variable to reflect your name <br />
+Go to wsl / locations.py
+Use user variable to reflect your name <br />
 Add to the if-else bock to add the location of storage - maintainer recommends using full paths to avoid confusion <br />
 The paths added here can be called all over the repo, do not use actual paths anywhere else <br />
 TODO: make setting this a part of docker setup <br />
