@@ -62,3 +62,11 @@ def rle2mask(rle, mask):
         current_position += lengths[index]
 
     return mask.reshape(width, height)
+
+def aupr(smap,bb_mask):
+	def rint(mask): 
+		mask[mask > 0.5] = 1
+		return mask
+
+	fpr,tpr,thresholds = precision_recall_curve(rint(bb_mask.flatten()),smap.flatten())
+	return auc(tpr,fpr)
