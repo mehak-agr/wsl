@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import cv2
 import pandas as pd
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import average_precision_score, roc_auc_score
 from wsl.networks.medinet.utils import box_to_map
 
 
@@ -56,6 +56,10 @@ def engine_boxes(loader: Any, checkpoint: Dict[str, Any]):
     
     org_size = (1024, 1024)
     new_size = (224, 224)
+    
+    threshold = 0.1
+    box_labels = []
+    box_scores = []
 
     with torch.set_grad_enabled(False):
         for iter_num, data in enumerate(loader):
@@ -76,14 +80,29 @@ def engine_boxes(loader: Any, checkpoint: Dict[str, Any]):
             all_labels.append(data[2])
             all_preds.append(max(scores + [0.0]))
             
-            if data[2] == 0:
-                continue
-            
             ground_map = box_to_map(loader.df[loader.df.Id == data[3]].box.to_list(), np.zeros(org_size))
             predicted_map = box_to_map(boxes, np.zeros(org_size), scores)
             ground_map = cv2.resize(ground_map, new_size, interpolation=cv2.INTER_NEAREST).clip(0, 1)
             predicted_map = cv2.resize(predicted_map, new_size, interpolation=cv2.INTER_AREA).clip(0, 1)
-            map_scores.append(roc_auc_score(ground_map.flatten(), predicted_map.flatten()))
+            if data[2] != 0:
+                map_scores.append(average_precision_score(ground_map.flatten(), predicted_map.flatten()))
+            
+            if len(boxes) > 1:
+                box = boxes[-1]
+                h, w = (box[0] + box[2] / 2) * new_size[0] / org_size[0], (box[1] + box[3] / 2) * new_size[1] / org_size[1]
+                box = [[max(0, int(h - new_size[0] / 14)), max(0, int(w - new_size[1] / 14)), min(new_size[0], int(h + new_size[0] / 14)), min(new_size[1], int(w + new_size[1] / 14))]]
+                score = scores[-1:]
+                predicted_map = box_to_map(box, np.zeros(new_size), score)
+            else:
+                predicted_map = np.zeros(new_size)
+            overlap = np.sum(np.multiply(ground_map, predicted_map)) / np.sum(predicted_map)
+                
+            if data[2] == 1 and overlap < threshold:
+                box_labels += [0, 1]
+                box_scores += [np.max(predicted_map), 0]
+            else:
+                box_labels += [data[2]]
+                box_scores += [np.max(predicted_map)]
 
             speed = iter_num // (time.time() - start)
             print('Epoch:', checkpoint['epoch'], 'Iter:', iter_num, 'Score:', np.mean(map_scores), 'Speed:', int(speed), 'img/s', end='\r', flush=True)
@@ -91,4 +110,5 @@ def engine_boxes(loader: Any, checkpoint: Dict[str, Any]):
     df = pd.DataFrame.from_dict(df)
     rmetric = roc_auc_score(all_labels, all_preds)
     wild_metric = np.mean(map_scores)
-    return df, rmetric, wild_metric
+    pointwise = average_precision_score(box_labels, box_scores)
+    return df, rmetric, wild_metric, pointwise

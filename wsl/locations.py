@@ -17,6 +17,7 @@ if user == 'mehak':
     wsl_csv_dir = root / 'wsl' / 'wsl' / 'csvs'
     wsl_model_dir = root / 'models'
     wsl_summary_dir = root / 'summary'
+    wsl_plot_dir = root / 'plots'
 else:
     print(f'User {user} not recognized.')
 

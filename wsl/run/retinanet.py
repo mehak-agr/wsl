@@ -34,8 +34,6 @@ def main(debug: bool,
          workers: int,
          patience: int,
          ID: str):
-
-    
     
     # ------------------------------------------------------
     if resume:
@@ -46,7 +44,7 @@ def main(debug: bool,
         print(mname)
 
     elif results:
-        if 'retainet' in name:
+        if 'retinanet' in name:
             matching_models = list(wsl_model_dir.glob(f'*{name}*/configs.json'))
         else:
             matching_models = list(wsl_model_dir.glob(f'*retinanet*{name}*/configs.json'))
@@ -118,13 +116,17 @@ def main(debug: bool,
                 configs = json.load(f)
             print('Calculating box results...')
             checkpoint['model'].eval()
-            df, rmetric, wild_metric = engine_boxes(test_dataset, checkpoint)
+            df, rmetric, wild_metric, pointwise = engine_boxes(test_dataset, checkpoint)
             df.to_csv(model_dir / 'results.csv')
+
             configs['rmetric'] = rmetric
             configs['wild_metric'] = wild_metric
+            configs['utility'] = wild_metric
+            configs['pointwise'] = pointwise
+
             with open(model_dir / 'configs.json', 'w') as fp:
                 json.dump(configs, fp)
-            print('Finished:', rmetric, wild_metric)
+            print('Finished:', rmetric, wild_metric, pointwise)
             print(f'You can find the calculated results at - {model_dir}/results.csv')
         return
 
@@ -236,7 +238,7 @@ def main(debug: bool,
             break
 
     checkpoint = torch.load(model_dir / 'best.pt', map_location='cuda:0' if torch.cuda.is_available() else 'cpu')
-    df, rmetric, wild_metric = engine_boxes(test_dataset, checkpoint)
+    df, rmetric, wild_metric, pointwise = engine_boxes(test_dataset, checkpoint)
     df.to_csv(model_dir / 'results.csv')
     print('Finished:', rmetric)
     print(f'You can find the calculated results at - {model_dir}/results.csv')
@@ -257,7 +259,8 @@ def main(debug: bool,
         'best_epoch': best_epoch,
         'best_loss': best_loss,
         'rmetric': rmetric,
-        'wild_metric': wild_metric
+        'wild_metric': wild_metric,
+        'pointwise': pointwise
     }
     with open(model_dir / 'configs.json', 'w') as fp:
         json.dump(configs, fp)

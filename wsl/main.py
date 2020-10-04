@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from argparse import ArgumentParser
-from wsl.run import medinet, retinanet, wild, ood
+from wsl.run import medinet, retinanet, wild, saliency, ood
 
 
 def main():
@@ -92,12 +92,13 @@ def main():
     # Identification parameter
     retinanet_parser.add_argument('--ID', type=str, default='placeholder', help='Special ID to identify a set of models')
     retinanet_parser.set_defaults(func=retinanet.main)
-
+    
     # Wild - the main wild map calculating routine
-    wild_parser = subparsers.add_parser('wild', help='Summarize all wild maps results for models')
-    wild_parser.add_argument('--name', type=str, default='all', help='all or specific model string')
-    wild_parser.add_argument('--task', type=str, default='detect', help='detect/segment')
-    wild_parser.set_defaults(func=wild.main)
+    saliency_parser = subparsers.add_parser('saliency', help='Summarize all saliency maps results for models')
+    saliency_parser.add_argument('--name', type=str, default='all', help='all or specific model string')
+    saliency_parser.add_argument('--start', type=int, default=0)
+    saliency_parser.add_argument('--plot', action='store_true', help='Plot the maps')
+    saliency_parser.set_defaults(func=saliency.main)
     
     # OOD - the main out of order distribution testing routine
     ood_parser = subparsers.add_parser('ood', help='Out of order distribution')

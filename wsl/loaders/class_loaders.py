@@ -93,7 +93,7 @@ class Loader(Dataset):
         label = self.labels[idx]
         label = torch.Tensor(label)
 
-        return img, label
+        return name, img, label
 
     def __len__(self):
         return len(self.names)
