@@ -19,8 +19,9 @@ def engine(loader: Any, checkpoint: Dict[str, Any],
 
     with torch.set_grad_enabled(is_train):
         for iter_num, data in enumerate(loader):
-            imgs = data[0].cuda().float()
-            labels = data[1].cuda().float()
+            name = data[0]
+            imgs = data[1].cuda().float()
+            labels = data[2].cuda().float()
 
             predicted = checkpoint['model'](imgs)
             loss = checkpoint['criterion'](predicted, labels)

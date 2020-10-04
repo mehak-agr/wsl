@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import numpy as np
 from typing import Dict, Tuple, List, Any
+from sklearn.metrics import precision_recall_curve, auc
 
 
 def regression_accuracy(true_labels, predicted_labels, error_range):
@@ -64,9 +65,9 @@ def rle2mask(rle, mask):
     return mask.reshape(width, height)
 
 def aupr(smap,bb_mask):
-	def rint(mask): 
-		mask[mask > 0.5] = 1
-		return mask
+    def rint(mask): 
+        mask[mask > 0.5] = 1
+        return mask
 
-	fpr,tpr,thresholds = precision_recall_curve(rint(bb_mask.flatten()),smap.flatten())
-	return auc(tpr,fpr)
+    fpr,tpr,thresholds = precision_recall_curve(rint(bb_mask.flatten()),smap.flatten())
+    return auc(tpr,fpr)

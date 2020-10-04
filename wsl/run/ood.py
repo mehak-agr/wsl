@@ -123,8 +123,7 @@ def main(out_data: str = 'chexpert'):
                 start = time.time()
                 for idx, data in enumerate(loader):
                     with torch.set_grad_enabled(True):
-                        imgs = data[0].cuda().float()
-                        _ = data[1]
+                        imgs = data[1].cuda().float()
                         imgs.requires_grad = True
                         _ = checkpoint['model'](imgs)
 

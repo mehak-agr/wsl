@@ -37,9 +37,9 @@ class IntegratedGradients():
 
     def generate_images_on_linear_path(self, input_image, steps):
         # Generate uniform numbers between 0 and steps
-        step_list = np.arange(steps+1)/steps
+        step_list = np.arange(steps + 1) / steps
         # Generate scaled xbar images
-        xbar_list = [input_image*step for step in step_list]
+        xbar_list = [input_image * step for step in step_list]
         return xbar_list
 
     def generate_gradients(self, input_image, target_class):
@@ -64,7 +64,7 @@ class IntegratedGradients():
     def generate_integrated_gradients(self, input_image, target_class, steps):
         # Generate xbar images
         xbar_list = self.generate_images_on_linear_path(input_image, steps)
-        # Initialize an iamge composed of zeros
+        # Initialize an image composed of zeros
         integrated_grads = np.zeros(input_image.size())
         for xbar_image in xbar_list:
             # Generate gradients from xbar images
