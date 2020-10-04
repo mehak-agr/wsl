@@ -11,7 +11,7 @@ import matplotlib.patches as patches
 from matplotlib.colors import LinearSegmentedColormap
 
 from wsl.loaders.class_loaders import Loader
-from wsl.locations import wsl_model_dir, wsl_plot_dir, known_tasks
+from wsl.locations import wsl_model_dir, wsl_plot_dir, known_tasks, known_layers
 from wsl.networks.medinet.utils import box_to_map, rle2mask
 from wsl.saliency import gradcam, guided_backprop, guided_gradcam, integrated_gradients, smooth_grad, vanilla_backprop
 
@@ -72,7 +72,7 @@ def main(name: str, start: int, plot: bool):
         VBP = vanilla_backprop.VanillaBackprop(checkpoint['model'])
         IG = integrated_gradients.IntegratedGradients(checkpoint['model'])
         GBP = guided_backprop.GuidedBackprop(checkpoint['model'])
-        GCAM = gradcam.GradCam(checkpoint['model'], target_layer=34)
+        GCAM = gradcam.GradCam(checkpoint['model'], target_layer=known_layers[configs['network']])
         
         for idx, data in enumerate(dataset):
             name, img, label = data

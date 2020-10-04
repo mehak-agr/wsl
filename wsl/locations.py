@@ -4,6 +4,7 @@ from pathlib import Path
 user = 'mehak'
 known_extensions = {'rsna': 'dcm', 'chexpert': 'jpg', 'chestxray8': 'png', 'siim': 'dcm'}
 known_tasks = {'rsna': 'detect', 'siim': 'segment'}
+known_layers = {'resnet':'layer4', 'densenet':'not_known', 'vgg':34}
 
 # root = Part of the share dedicated to the object detection subproject
 # wsl_data_dir = Location of available datasets
