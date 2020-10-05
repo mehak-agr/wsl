@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from argparse import ArgumentParser
-from wsl.run import medinet, retinanet, wild, saliency, ood
+from wsl.run import medinet, retinanet, saliency, ood
 
 
 def main():

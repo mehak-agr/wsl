@@ -13,7 +13,10 @@ from matplotlib.colors import LinearSegmentedColormap
 from wsl.loaders.class_loaders import Loader
 from wsl.locations import wsl_model_dir, wsl_plot_dir, known_tasks, known_layers
 from wsl.networks.medinet.utils import box_to_map, rle2mask
-from wsl.saliency import gradcam, guided_backprop, guided_gradcam, integrated_gradients, smooth_grad, vanilla_backprop
+
+from wsl.saliency.backprop import Gradient
+from wsl.saliency.misc_functions import convert_to_grayscale
+from wsl.saliency import gradcam
 
 def main(name: str, start: int, plot: bool):
     
@@ -69,9 +72,8 @@ def main(name: str, start: int, plot: bool):
 
         all_scores = defaultdict(list)
         
-        VBP = vanilla_backprop.VanillaBackprop(checkpoint['model'])
-        IG = integrated_gradients.IntegratedGradients(checkpoint['model'])
-        GBP = guided_backprop.GuidedBackprop(checkpoint['model'])
+        GD = Gradient(checkpoint['model'], False)
+        GBP = Gradient(checkpoint['model'], True)
         GCAM = gradcam.GradCam(checkpoint['model'], target_layer=known_layers[configs['network']])
         
         for idx, data in enumerate(dataset):
@@ -100,7 +102,7 @@ def main(name: str, start: int, plot: bool):
                 wild = (wild - wild.min()) / (wild.max() - wild.min())
                 wild = cv2.resize(wild, new_size, interpolation=cv2.INTER_NEAREST)
                 
-                all_scores['WILD'].append(aupr(ground_map, wild))
+                all_scores['WILD'].append(aupr(ground_map.flatten(), wild.flatten()))
                 
                 if plot:
                     plt.figure(figsize=(4, 12))
@@ -117,40 +119,25 @@ def main(name: str, start: int, plot: bool):
                     plt.close()
 
             else:
-                print('grad')
-                vanilla_grads = VBP.generate_gradients(img.unsqueeze(dim=0).cuda().float(), label)
-                grad = vanilla_backprop.convert_to_grayscale(vanilla_grads)
-
-                print('ig')
-                integrated_grads = IG.generate_integrated_gradients(img.unsqueeze(dim=0).cuda().float(), label, 100)
-                ig = integrated_gradients.convert_to_grayscale(integrated_grads)
-
-                print('gbp')
-                guided_grads = GBP.generate_gradients(img.unsqueeze(dim=0).cuda().float(), label)
-                gbp = guided_backprop.convert_to_grayscale(guided_grads)
-
-                print('sg')
-                smooth_grad_mask = smooth_grad.generate_smooth_grad(VBP, img.unsqueeze(dim=0).cuda().float(), label, 5, 0.3)
-                sg = smooth_grad.convert_to_grayscale(smooth_grad_mask)
-
-                print('sig')
-                smooth_grad_mask = smooth_grad.generate_smooth_grad(IG, img.unsqueeze(dim=0).cuda().float(), label, 5, 0.3)
-                sig = smooth_grad.convert_to_grayscale(smooth_grad_mask)
+                grad = GD.generate_gradients(img.unsqueeze(dim=0).cuda().float(), label)
+                ig = GD.generate_integrated_gradients(img.unsqueeze(dim=0).cuda().float(), label, 100)
+ 
+                sg = GD.generate_smooth_grad(img.unsqueeze(dim=0).cuda().float(), label, 5, 0.3, 0)
+                sig= GD.generate_smooth_grad(img.unsqueeze(dim=0).cuda().float(), label, 5, 0.3, 100)
+                
+                gbp = GBP.generate_gradients(img.unsqueeze(dim=0).cuda().float(), label)
 
                 print('gcam')
-                gcam = GCAM.generate_cam(img.unsqueeze(dim=0).cuda().float(), label)
-
-                print('ggcam')
-                cam_gb = guided_gradcam.guided_grad_cam(cam, guided_grads)
-                ggcam = guided_gradcam.convert_to_grayscale(cam_gb)
+                gcam = GCAM.generate_cam(img.unsqueeze(dim=0).cuda().float(), label).squeeze()
+                ggcam = np.multiply(gcam, gbp)
         
-                all_scores['GRAD'].append(aupr(ground_map, grayscale_vanilla_grads))
-                all_scores['SG'].append(aupr(ground_map, grayscale_smooth_grad))
-                all_scores['IG'].append(aupr(ground_map, grayscale_integrated_grads))
-                all_scores['SIG'].append(aupr(ground_map, grayscale_smooth_ig))
-                all_scores['GBP'].append(aupr(ground_map, grayscale_guided_grads, ground_map))
-                all_scores['GCAM'].append(aupr(ground_map, cam))
-                all_scores['GGCAM'].append(aupr(ground_map, grayscale_cam_gb))
+                all_scores['GRAD'].append(aupr(ground_map.flatten(), grad.flatten()))
+                all_scores['SG'].append(aupr(ground_map.flatten(), sg.flatten()))
+                all_scores['IG'].append(aupr(ground_map.flatten(), ig.flatten()))
+                all_scores['SIG'].append(aupr(ground_map.flatten(), sig.flatten()))
+                all_scores['GBP'].append(aupr(ground_map.flatten(), gbp.flatten()))
+                all_scores['GCAM'].append(aupr(ground_map.flatten(), gcam.flatten()))
+                all_scores['GGCAM'].append(aupr(ground_map.flatten(), ggcam.flatten()))
                 
                 if plot:
                     row, col = range(2), range(4)
@@ -162,13 +149,8 @@ def main(name: str, start: int, plot: bool):
                     fig, ax = plt.subplots(2, 4, figsize=(18, 8))
                     for i in row:
                         for j in col:
-                            if len(maps[i][j].shape) == 3:
-                                maps[i][j] = maps[i][j][1]
-                            rect = patches.Rectangle(a, h, w, linewidth=3, edgecolor='g', facecolor='none')
-                            hmap = np.asarray(maps[i][j])
                             ax[i, j].imshow(np.transpose(img, (1, 2, 0)))
-                            ax[i, j].imshow(hmap, alpha = 0.8, cmap='rainbow')
-                            ax[i, j].add_patch(rect)
+                            ax[i, j].imshow(maps[i][j], alpha = 0.8, cmap='rainbow')
                             ax[i, j].text(0, 220, map_names[i][j], fontsize='x-large', color='white', weight='bold', bbox=dict(fill=True, linewidth=0))
                             ax[i, j].axis('off')
                     plt.subplots_adjust(wspace=0.05, hspace=0.05)
