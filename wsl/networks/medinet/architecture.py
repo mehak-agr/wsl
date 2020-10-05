@@ -104,22 +104,21 @@ class Architecture(nn.Module):
 
     def forward(self, x):
         x = self.features(x)
+        if self.get_map:
+            handle = self.hook_input(x)
+            feat_map = x
+
         if self.wildcat:
             x = self.classifier(x)
-            if self.get_map:
-                handle = self.hook_input(x)
-                feat_map = x
+            class_map = x
             x = self.pool(x)
         else:
-            if self.get_map:
-                handle = self.hook_input(x)
-                feat_map = x
             x = self.pool(x)
             x = x.view(x.size(0), -1)
             x = self.classifier(x)
         
         if self.get_map:
-            return x, feat_map, handle
+            return x, feat_map, class_map, handle
         else:
             return x
 

@@ -92,7 +92,7 @@ class BackProp():
             
         return integrated_grads
     
-    def generate_smooth_grad(self, img, param_n, param_sigma_multiplier, steps):
+    def generate_smooth_grad(self, img, param_n, param_sigma_multiplier):
         # Generate an empty image/matrix
         smooth_grad = np.zeros((img.shape[-2], img.shape[-1]))
 
@@ -101,10 +101,7 @@ class BackProp():
         for x in range(param_n):
             noise = Variable(img.data.new(img.size()).normal_(mean, sigma**2))
             noisy_img = img + noise
-            if steps == 0:
-                grads = self.generate_gradients(noisy_img)
-            else:
-                grads = self.generate_integrated_gradients(noisy_img, steps)
+            grads = self.generate_gradients(noisy_img)
             smooth_grad += grads
 
         smooth_grad = smooth_grad / param_n
@@ -112,7 +109,7 @@ class BackProp():
     
     def generate_cam(self, img):
         img.requires_grad = True
-        output, feat_map, handle = self.model(img)
+        output, feat_map, _, handle = self.model(img)
         
         one_hot_output = torch.FloatTensor(1, output.size()[-1]).zero_().cuda()
         one_hot_output[0] = 1

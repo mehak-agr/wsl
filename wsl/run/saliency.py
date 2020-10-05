@@ -77,7 +77,6 @@ def main(name: str, start: int, plot: bool):
         start_time = time.time()
         
         for idx, data in enumerate(dataset):
-            print(f'{idx} speed-{(time.time() - start_time) // (idx + 1)} s/img', end='\r')
             checkpoint['model'].zero_grad()
             name, img, label = data
             label = label.squeeze().cuda()
@@ -97,77 +96,69 @@ def main(name: str, start: int, plot: bool):
             ground_map = cv2.resize(ground_map, new_size, interpolation=cv2.INTER_NEAREST).clip(0, 1)
             
             # Make the saliency map
+            checkpoint['model'].get_map = True
             if configs['wildcat']:
-                checkpoint['model'].get_map = True
-                with torch.set_grad_enabled(False):
-                    wild, _, handle = checkpoint['model'](img.unsqueeze(dim=0).cuda().float())
-                    handle.remove_hook()
-                    wild = wild.squeeze().cpu().data.numpy()
+                
+                _, _, wild, handle = checkpoint['model'](img.unsqueeze(dim=0).cuda().float())
+                handle.remove()
+                wild = wild.squeeze().cpu().data.numpy()
                 wild = (wild - wild.min()) / (wild.max() - wild.min())
                 wild = cv2.resize(wild, new_size, interpolation=cv2.INTER_NEAREST)
-                
-                all_scores['WILD'].append(aupr(ground_map.flatten(), wild.flatten()))
-                
-                if plot:
-                    plt.figure(figsize=(4, 12))
-                    x = LinearSegmentedColormap.from_list(name='rainbow', colors=color_array)
-                    plt.register_cmap(cmap=x)
-                    plt.subplot(1, 3, 1)
-                    plt.imshow(np.transpose(img, (1, 2, 0)))
-                    plt.subplot(1, 3, 2)
-                    plt.imshow(ground_map, alpha = 0.8, cmap='rainbow')
-                    plt.subplot(1, 3, 2)
-                    plt.imshow(wild, alpha = 0.8, cmap='rainbow')
-                    plt.savefig(f'{wsl_plot_dir}/wild_{name}.png', dpi=300, bbox_inches='tight')
-                    plt.show()
-                    plt.close()
-
             else:
-                checkpoint['model'].get_map = False
-                grad = GD.generate_gradients(img.unsqueeze(dim=0).cuda().float())
-                ig = GD.generate_integrated_gradients(img.unsqueeze(dim=0).cuda().float(), 100)
- 
-                sg = GD.generate_smooth_grad(img.unsqueeze(dim=0).cuda().float(), 5, 0.3, 0)
-                sig= GD.generate_smooth_grad(img.unsqueeze(dim=0).cuda().float(), 5, 0.3, 0)
-                
-                gbp = GBP.generate_gradients(img.unsqueeze(dim=0).cuda().float())
+                wild = np.zeros_like(ground_map)
 
-                checkpoint['model'].get_map = True
-                gcam = GD.generate_cam(img.unsqueeze(dim=0).cuda().float()).squeeze()
-                ggcam = np.multiply(gcam, gbp)
-        
-                all_scores['GRAD'].append(aupr(ground_map.flatten(), grad.flatten()))
-                all_scores['SG'].append(aupr(ground_map.flatten(), sg.flatten()))
-                all_scores['IG'].append(aupr(ground_map.flatten(), ig.flatten()))
-                all_scores['SIG'].append(aupr(ground_map.flatten(), sig.flatten()))
-                all_scores['GBP'].append(aupr(ground_map.flatten(), gbp.flatten()))
-                all_scores['GCAM'].append(aupr(ground_map.flatten(), gcam.flatten()))
-                all_scores['GGCAM'].append(aupr(ground_map.flatten(), ggcam.flatten()))
-                
-                if plot:
-                    row, col = range(2), range(4)
-                    map_names = [['MASK', 'GRAD', 'SG', 'IG'], ['SIG', 'GCAM', 'GBP', 'GGCAM']]
-                    maps = [[ground_map, grad, sg, ig], [sig, gcam, gbp, ggcam]]
-                    x = LinearSegmentedColormap.from_list(name='rainbow', colors=color_array)
-                    plt.register_cmap(cmap=x)
+            gcam = GD.generate_cam(img.unsqueeze(dim=0).cuda().float()).squeeze()
+            
+            checkpoint['model'].get_map = False
+            grad = GD.generate_gradients(img.unsqueeze(dim=0).cuda().float())
+            ig = GD.generate_integrated_gradients(img.unsqueeze(dim=0).cuda().float(), 100)
 
-                    fig, ax = plt.subplots(2, 4, figsize=(18, 8))
-                    for i in row:
-                        for j in col:
-                            ax[i, j].imshow(np.transpose(img, (1, 2, 0)))
+            sg = GD.generate_smooth_grad(img.unsqueeze(dim=0).cuda().float(), 5, 0.3, 0)
+            sig= GD.generate_smooth_grad(img.unsqueeze(dim=0).cuda().float(), 5, 0.3, 0)
+
+            gbp = GBP.generate_gradients(img.unsqueeze(dim=0).cuda().float())
+            ggcam = np.multiply(gcam, gbp)
+
+            all_scores['WILD'].append(aupr(ground_map.flatten(), wild.flatten()))
+            all_scores['GRAD'].append(aupr(ground_map.flatten(), grad.flatten()))
+            all_scores['SG'].append(aupr(ground_map.flatten(), sg.flatten()))
+            all_scores['IG'].append(aupr(ground_map.flatten(), ig.flatten()))
+            all_scores['SIG'].append(aupr(ground_map.flatten(), sig.flatten()))
+            all_scores['GBP'].append(aupr(ground_map.flatten(), gbp.flatten()))
+            all_scores['GCAM'].append(aupr(ground_map.flatten(), gcam.flatten()))
+            all_scores['GGCAM'].append(aupr(ground_map.flatten(), ggcam.flatten()))
+                
+            if plot:
+                row, col = range(2), range(4)
+                map_names = [['XRAY', 'GRAD', 'SG', 'IG'], ['MASK', 'SIG', 'GCAM', 'GBP', 'GGCAM', 'WILD']]
+                maps = [[ground_map, grad, sg, ig], [ground_map, sig, gcam, gbp, ggcam]]
+                x = LinearSegmentedColormap.from_list(name='rainbow', colors=color_array)
+                plt.register_cmap(cmap=x)
+
+                fig, ax = plt.subplots(2, 4, figsize=(18, 8))
+                for i in row:
+                    for j in col:
+                        ax[i, j].imshow(np.transpose(img, (1, 2, 0)))
+                        if not (i == 0 and j == 0):
                             ax[i, j].imshow(maps[i][j], alpha = 0.8, cmap='rainbow')
-                            ax[i, j].text(0, 220, map_names[i][j], fontsize='x-large', color='white', weight='bold', bbox=dict(fill=True, linewidth=0))
-                            ax[i, j].axis('off')
-                    plt.subplots_adjust(wspace=0.05, hspace=0.05)
-                    plt.savefig(f'{wsl_plot_dir}/saliency_{name}.png', dpi=300, bbox_inches='tight')
-                    plt.show()
-                    plt.close()
+                        ax[i, j].text(0, 220, map_names[i][j], fontsize='x-large', color='white', weight='bold', bbox=dict(fill=True, linewidth=0))
+                        ax[i, j].axis('off')
+                plt.subplots_adjust(wspace=0.05, hspace=0.05)
+                plt.savefig(f'{wsl_plot_dir}/saliency_{name}.png', dpi=300, bbox_inches='tight')
+                plt.show()
+                plt.close()
                     
             del data
+
+            print_str = f'{idx}: | '
+            for key, value in all_scores.items():
+                print_str += f'{key}-{int(np.mean(value) * 100)} | '
+            print_str += str(round((time.time() - start_time) / (idx + 1), 2)) + ' s/img'
+            print(print_str, end='\r')
                 
         for key in all_scores.keys():
             configs[key] = np.mean(all_scores[key])
             print(key, ' ', configs[key])
             
-        with open(path / 'configs.json', 'w') as fp:
+        with open(model_dir / 'configs.json', 'w') as fp:
             json.dump(configs, fp)
