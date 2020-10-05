@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 import numpy as np
 from typing import Dict, Tuple, List, Any
-from sklearn.metrics import precision_recall_curve, auc
 
 
 def regression_accuracy(true_labels, predicted_labels, error_range):
@@ -64,10 +63,9 @@ def rle2mask(rle, mask):
 
     return mask.reshape(width, height)
 
-def aupr(smap,bb_mask):
-    def rint(mask): 
-        mask[mask > 0.5] = 1
-        return mask
-
-    fpr,tpr,thresholds = precision_recall_curve(rint(bb_mask.flatten()),smap.flatten())
-    return auc(tpr,fpr)
+def convert_to_grayscale(img):
+    grayscale_im = np.sum(np.abs(img), axis=0)
+    im_max = np.percentile(grayscale_im, 99)
+    im_min = np.min(grayscale_im)
+    grayscale_im = (np.clip((grayscale_im - im_min) / (im_max - im_min), 0, 1))
+    return grayscale_im

@@ -19,7 +19,7 @@ class Architecture(nn.Module):
         super(Architecture, self).__init__()
 
         self.wildcat = wildcat
-        self.get_map = (get_map and wildcat)
+        self.get_map = get_map
         self.network = network
 
         if self.network == 'densenet':
@@ -94,16 +94,33 @@ class Architecture(nn.Module):
                 layer_names[layer] = name
                 handles.append(layer.register_forward_hook(hook))
         return handles
+    
+    def hook_input(self, input_tensor):
+        self.gradient = None
+        def hook_function(grad_in):
+            self.gradient = grad_in
+        handle = input_tensor.register_hook(hook_function)
+        return handle
 
     def forward(self, x):
         x = self.features(x)
         if self.wildcat:
             x = self.classifier(x)
             if self.get_map:
-                return x
+                handle = self.hook_input(x)
+                feat_map = x
             x = self.pool(x)
         else:
+            if self.get_map:
+                handle = self.hook_input(x)
+                feat_map = x
             x = self.pool(x)
             x = x.view(x.size(0), -1)
             x = self.classifier(x)
-        return x
+        
+        if self.get_map:
+            return x, feat_map, handle
+        else:
+            return x
+
+

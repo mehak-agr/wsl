@@ -1,4 +1,5 @@
 import torch
+import time
 import numpy as np
 from collections import defaultdict
 
@@ -11,12 +12,10 @@ import matplotlib.patches as patches
 from matplotlib.colors import LinearSegmentedColormap
 
 from wsl.loaders.class_loaders import Loader
-from wsl.locations import wsl_model_dir, wsl_plot_dir, known_tasks, known_layers
+from wsl.locations import wsl_model_dir, wsl_plot_dir, known_tasks
+from wsl.networks.medinet.backprop import BackProp
 from wsl.networks.medinet.utils import box_to_map, rle2mask
 
-from wsl.saliency.backprop import Gradient
-from wsl.saliency.misc_functions import convert_to_grayscale
-from wsl.saliency import gradcam
 
 def main(name: str, start: int, plot: bool):
     
@@ -64,7 +63,7 @@ def main(name: str, start: int, plot: bool):
             
         checkpoint = torch.load(model_dir / 'best.pt', map_location='cuda:0' if torch.cuda.is_available() else 'cpu')
         checkpoint['model'] = checkpoint['model'].module
-        checkpoint['model'].get_map = True
+        checkpoint['model'].gradient = None
         checkpoint['model'].eval()
         
         org_size = (1024, 1024)
@@ -72,11 +71,14 @@ def main(name: str, start: int, plot: bool):
 
         all_scores = defaultdict(list)
         
-        GD = Gradient(checkpoint['model'], False)
-        GBP = Gradient(checkpoint['model'], True)
-        GCAM = gradcam.GradCam(checkpoint['model'], target_layer=known_layers[configs['network']])
+        GD = BackProp(checkpoint['model'])
+        GBP = BackProp(checkpoint['model'], True)
+        
+        start_time = time.time()
         
         for idx, data in enumerate(dataset):
+            print(f'{idx} speed-{(time.time() - start_time) // (idx + 1)} s/img', end='\r')
+            checkpoint['model'].zero_grad()
             name, img, label = data
             label = label.squeeze().cuda()
             
@@ -96,8 +98,10 @@ def main(name: str, start: int, plot: bool):
             
             # Make the saliency map
             if configs['wildcat']:
+                checkpoint['model'].get_map = True
                 with torch.set_grad_enabled(False):
-                    wild = checkpoint['model'](img.unsqueeze(dim=0).cuda().float())
+                    wild, _, handle = checkpoint['model'](img.unsqueeze(dim=0).cuda().float())
+                    handle.remove_hook()
                     wild = wild.squeeze().cpu().data.numpy()
                 wild = (wild - wild.min()) / (wild.max() - wild.min())
                 wild = cv2.resize(wild, new_size, interpolation=cv2.INTER_NEAREST)
@@ -119,16 +123,17 @@ def main(name: str, start: int, plot: bool):
                     plt.close()
 
             else:
-                grad = GD.generate_gradients(img.unsqueeze(dim=0).cuda().float(), label)
-                ig = GD.generate_integrated_gradients(img.unsqueeze(dim=0).cuda().float(), label, 100)
+                checkpoint['model'].get_map = False
+                grad = GD.generate_gradients(img.unsqueeze(dim=0).cuda().float())
+                ig = GD.generate_integrated_gradients(img.unsqueeze(dim=0).cuda().float(), 100)
  
-                sg = GD.generate_smooth_grad(img.unsqueeze(dim=0).cuda().float(), label, 5, 0.3, 0)
-                sig= GD.generate_smooth_grad(img.unsqueeze(dim=0).cuda().float(), label, 5, 0.3, 100)
+                sg = GD.generate_smooth_grad(img.unsqueeze(dim=0).cuda().float(), 5, 0.3, 0)
+                sig= GD.generate_smooth_grad(img.unsqueeze(dim=0).cuda().float(), 5, 0.3, 0)
                 
-                gbp = GBP.generate_gradients(img.unsqueeze(dim=0).cuda().float(), label)
+                gbp = GBP.generate_gradients(img.unsqueeze(dim=0).cuda().float())
 
-                print('gcam')
-                gcam = GCAM.generate_cam(img.unsqueeze(dim=0).cuda().float(), label).squeeze()
+                checkpoint['model'].get_map = True
+                gcam = GD.generate_cam(img.unsqueeze(dim=0).cuda().float()).squeeze()
                 ggcam = np.multiply(gcam, gbp)
         
                 all_scores['GRAD'].append(aupr(ground_map.flatten(), grad.flatten()))
@@ -157,6 +162,8 @@ def main(name: str, start: int, plot: bool):
                     plt.savefig(f'{wsl_plot_dir}/saliency_{name}.png', dpi=300, bbox_inches='tight')
                     plt.show()
                     plt.close()
+                    
+            del data
                 
         for key in all_scores.keys():
             configs[key] = np.mean(all_scores[key])
