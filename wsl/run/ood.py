@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 
 def main(model: str = 'rsna_Pneumonia_lr1e-05_bs64_adam_resnet50_first', debug: bool = False, data: str = 'siim', column: str = 'Pneumothorax', extension: str = 'dcm', classes: int = 1):
     path = wsl_model_dir / model
-    print(f'Model {idx} : {path}')
+    print(f'Model: {path}')
 
     if (path / 'configs.json').exists():  # Model not completed
         with open(path / 'configs.json') as f:
@@ -43,12 +43,12 @@ def main(model: str = 'rsna_Pneumonia_lr1e-05_bs64_adam_resnet50_first', debug: 
         valid_dataset, batch_size=configs['batchsize'], num_workers=4,
         pin_memory=True, shuffle=True)
 
-    out_dataset = Loader(data=out_data,
+    out_dataset = Loader(data=data,
                          split='valid',
-                         extension=configs['extension'],
-                         classes=configs['classes'],
-                         column=configs['column'],
-                         regression=configs['regression'])
+                         extension=extension,
+                         classes=classes,
+                         column=column,
+                         regression=False)
     out_loader = DataLoader(  # type: ignore
         out_dataset, batch_size=configs['batchsize'], num_workers=4,
         pin_memory=True, shuffle=True)
@@ -79,8 +79,7 @@ def main(model: str = 'rsna_Pneumonia_lr1e-05_bs64_adam_resnet50_first', debug: 
         start = time.time()
         with torch.set_grad_enabled(False):
             for idx, data in enumerate(loader):
-                imgs = data[0].cuda().float()
-                _ = data[1]
+                imgs = data[1].cuda().float()
                 _ = checkpoint['model'](imgs)
                 speed = configs['batchsize'] * idx // (time.time() - start)
                 print('Iter:', idx, 'Speed:', int(speed), 'img/s', end='\r', flush=True)
@@ -137,7 +136,6 @@ def main(model: str = 'rsna_Pneumonia_lr1e-05_bs64_adam_resnet50_first', debug: 
                         scores[name] = gaussian[name].detach().data
                     else:
                         scores[name] = torch.cat((scores[name], gaussian[name].detach().data), dim=0)
-                    print(scores[name].mean())
 
                 checkpoint['optimizer'].zero_grad()
                 speed = configs['batchsize'] * idx // (time.time() - start)
@@ -148,16 +146,19 @@ def main(model: str = 'rsna_Pneumonia_lr1e-05_bs64_adam_resnet50_first', debug: 
         return scores
 
     print('get mahalanobis scores...')
-    magnitudes = [0.0, 0.01, 0.005, 0.002, 0.0014, 0.001, 0.0005]
+    magnitudes = [0.0, 0.0001, 0.0005, 0.001, 0.005, 0.01]
+    # magnitudes = [0.0, 0.01, 0.005, 0.002, 0.0014, 0.001, 0.0005]
     maha_valid_scores = {}
     maha_out_scores = {}
     for magnitude in magnitudes:
         print('Noise:', magnitude)
         print('Data - Assumed negative class:', configs['data'])
         maha_valid_scores[magnitude] = get_mahalanobis_score(valid_loader, layer_names, magnitude)
-        print('Data - Assumed positive class:', out_data)
+        print('Data - Assumed positive class:', data)
         maha_out_scores[magnitude] = get_mahalanobis_score(out_loader, layer_names, magnitude)
         print()
 
     print('merge mahalanobis scores...')
 
+
+main()
