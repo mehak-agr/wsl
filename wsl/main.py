@@ -102,7 +102,12 @@ def main():
     
     # OOD - the main out of order distribution testing routine
     ood_parser = subparsers.add_parser('ood', help='Out of order distribution')
-    ood_parser.add_argument('--out_data', type=str, default='chexpert', help='Name of the out distribution')
+    medinet_parser.add_argument('--model', type=str, help='Model name to run for')
+    ood_parser.add_argument('--debug', action='store_true', help='In debugging mode, runs for just 10 sample images.')
+    ood_parser.add_argument('--data', type=str, default='ssim', help='Name of the out distribution')
+    medinet_parser.add_argument('--column', type=str, default='Pneumothorax', help='Name of the column that contains ground truth in info.csv')
+    medinet_parser.add_argument('--extension', type=str, default='dcm')
+    medinet_parser.add_argument('--classes', type=int, default=1)
     ood_parser.set_defaults(func=ood.main)
 
     # Run the parsers

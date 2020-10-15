@@ -118,7 +118,10 @@ class Architecture(nn.Module):
             x = self.classifier(x)
         
         if self.get_map:
-            return x, feat_map, class_map, handle
+            if self.wildcat:
+                return x, feat_map, class_map, handle
+            else:
+                return x, feat_map, feat_map, handle
         else:
             return x
 

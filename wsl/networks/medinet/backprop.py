@@ -92,7 +92,7 @@ class BackProp():
             
         return integrated_grads
     
-    def generate_smooth_grad(self, img, param_n, param_sigma_multiplier):
+    def generate_smooth_grad(self, img, param_n, param_sigma_multiplier, steps):
         # Generate an empty image/matrix
         smooth_grad = np.zeros((img.shape[-2], img.shape[-1]))
 
@@ -101,7 +101,10 @@ class BackProp():
         for x in range(param_n):
             noise = Variable(img.data.new(img.size()).normal_(mean, sigma**2))
             noisy_img = img + noise
-            grads = self.generate_gradients(noisy_img)
+            if steps == 0:
+                grads = self.generate_gradients(noisy_img)
+            else:
+                grads = self.generate_integrated_gradients(noisy_img, steps)
             smooth_grad += grads
 
         smooth_grad = smooth_grad / param_n

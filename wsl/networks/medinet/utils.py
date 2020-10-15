@@ -65,7 +65,8 @@ def rle2mask(rle, mask):
 
 def convert_to_grayscale(img):
     grayscale_im = np.sum(np.abs(img), axis=0)
-    im_max = np.percentile(grayscale_im, 99)
-    im_min = np.min(grayscale_im)
-    grayscale_im = (np.clip((grayscale_im - im_min) / (im_max - im_min), 0, 1))
+    if grayscale_im.sum() != 0:
+        im_max = np.percentile(grayscale_im, 99)
+        im_min = np.min(grayscale_im)
+        grayscale_im = (np.clip((grayscale_im - im_min) / (im_max - im_min), 0, 1))
     return grayscale_im

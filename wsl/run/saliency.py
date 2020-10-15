@@ -20,12 +20,12 @@ from wsl.networks.medinet.utils import box_to_map, rle2mask
 def main(name: str, start: int, plot: bool):
     
     if name == 'all':
-        model_dirs = wsl_model_dir.glob('*')
+        model_dirs = wsl_model_dir.glob('rsna*')
     else:
-        model_dirs = wsl_model_dir.glob(f'*{name}*')
+        model_dirs = wsl_model_dir.glob(f'rsna*{name}*')
 
     model_dirs = list(model_dirs)
-    model_dirs = model_dirs[start:]
+    model_dirs = model_dirs[start:start+30]
     
     print('Number of potential model directory matches =', len(model_dirs))
     
@@ -101,6 +101,7 @@ def main(name: str, start: int, plot: bool):
                 
                 _, _, wild, handle = checkpoint['model'](img.unsqueeze(dim=0).cuda().float())
                 handle.remove()
+                wild = torch.max(wild, dim=1)[0]
                 wild = wild.squeeze().cpu().data.numpy()
                 wild = (wild - wild.min()) / (wild.max() - wild.min())
                 wild = cv2.resize(wild, new_size, interpolation=cv2.INTER_NEAREST)
@@ -111,10 +112,10 @@ def main(name: str, start: int, plot: bool):
             
             checkpoint['model'].get_map = False
             grad = GD.generate_gradients(img.unsqueeze(dim=0).cuda().float())
-            ig = GD.generate_integrated_gradients(img.unsqueeze(dim=0).cuda().float(), 100)
+            ig = GD.generate_integrated_gradients(img.unsqueeze(dim=0).cuda().float(), 25)
 
-            sg = GD.generate_smooth_grad(img.unsqueeze(dim=0).cuda().float(), 5, 0.3, 0)
-            sig= GD.generate_smooth_grad(img.unsqueeze(dim=0).cuda().float(), 5, 0.3, 0)
+            sg = GD.generate_smooth_grad(img.unsqueeze(dim=0).cuda().float(), 5, 0.1, 0)
+            sig= GD.generate_smooth_grad(img.unsqueeze(dim=0).cuda().float(), 5, 0.1, 10)
 
             gbp = GBP.generate_gradients(img.unsqueeze(dim=0).cuda().float())
             ggcam = np.multiply(gcam, gbp)
@@ -130,7 +131,7 @@ def main(name: str, start: int, plot: bool):
                 
             if plot:
                 row, col = range(2), range(4)
-                map_names = [['XRAY', 'GRAD', 'SG', 'IG'], ['MASK', 'SIG', 'GCAM', 'GBP', 'GGCAM', 'WILD']]
+                map_names = [['XRAY', 'GRAD', 'SG', 'IG', 'SIG'], ['MASK', 'GCAM', 'GBP', 'GGCAM', 'WILD']]
                 maps = [[ground_map, grad, sg, ig], [ground_map, sig, gcam, gbp, ggcam]]
                 x = LinearSegmentedColormap.from_list(name='rainbow', colors=color_array)
                 plt.register_cmap(cmap=x)
@@ -147,8 +148,6 @@ def main(name: str, start: int, plot: bool):
                 plt.savefig(f'{wsl_plot_dir}/saliency_{name}.png', dpi=300, bbox_inches='tight')
                 plt.show()
                 plt.close()
-                    
-            del data
 
             print_str = f'{idx}: | '
             for key, value in all_scores.items():
