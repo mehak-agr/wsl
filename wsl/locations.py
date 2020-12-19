@@ -12,7 +12,7 @@ known_tasks = {'rsna': 'detect', 'siim': 'segment'}
 # wsl_summary_dir = Location of model dir where checkpoints are stored
 
 if user == 'mehak':
-    root = Path('/data/2015P002510/Mehak/git_wsl')
+    root = Path('/data/mehak.aggarwal/data/2015P002510/Mehak/git_wsl')
     wsl_data_dir = root / 'data'
     wsl_csv_dir = root / 'wsl' / 'wsl' / 'csvs'
     wsl_model_dir = root / 'models'

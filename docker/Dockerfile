@@ -44,4 +44,4 @@ ENV PYTHONPATH /gdcm_pkg/
 
 # Install Python packages from a requirements file
 COPY requirements.txt /
-RUN pip install --upgrade pip==20.1.1 && pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip==20.3.1 && pip install --no-cache-dir -r requirements.txt
