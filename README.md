@@ -1,4 +1,4 @@
-# Weakly Supervised Localization
+# Towards Trainable Saliency Maps in Medical Imaging
 
 ## Directory Structure
 
