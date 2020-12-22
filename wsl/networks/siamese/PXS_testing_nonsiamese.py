@@ -118,7 +118,7 @@ def dcm2img2jpg2pxs(dcm_file_path, net, proc_method):
  
     # Correct image inversion.
     if dcm_file.PhotometricInterpretation == "MONOCHROME1":
-       normalized_image = cv2.bitwise_not(normalized_image)
+        normalized_image = cv2.bitwise_not(normalized_image)
 
     rescaled_image = autocrop(normalized_image)
     rescaled_image = cv2.resize(rescaled_image, (320, 320), interpolation = cv2.INTER_LINEAR)

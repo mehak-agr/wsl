@@ -41,10 +41,10 @@ def main():
     medinet_parser.add_argument('--resume', action='store_true', help='Resume network')
     medinet_parser.add_argument('--name', type=str, help='Model name to resume')
     # General parameters
-    medinet_parser.add_argument('--lr', type=float, default=1e-6)
+    medinet_parser.add_argument('--lr', type=float, default=1e-5)
     medinet_parser.add_argument('--batchsize', type=int, default=64)
     medinet_parser.add_argument('--workers', type=int, default=4)
-    medinet_parser.add_argument('--patience', type=int, default=10)
+    medinet_parser.add_argument('--patience', type=int, default=5)
     medinet_parser.add_argument('--balanced', action='store_true')
     # Wildcat parameters
     medinet_parser.add_argument('--maps', default=1, type=int, help='maps per class')
@@ -67,7 +67,7 @@ def main():
     retinanet_parser.add_argument('--classes', type=int, default=1)
     # Type of model
     retinanet_parser.add_argument('--depth', type=int, default=101, help='Model depth')
-    retinanet_parser.add_argument('--pretrained', action='store_true', help='Use pretrianed network')
+    retinanet_parser.add_argument('--pretrained', action='store_true', help='Use pretrained network')
     retinanet_parser.add_argument('--optim', type=str, default='adam', help='Choose - sgd/adam')
     # For resuming model
     retinanet_parser.add_argument('--resume', action='store_true', help='Resume network')

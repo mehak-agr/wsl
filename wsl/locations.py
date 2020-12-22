@@ -2,7 +2,7 @@
 from pathlib import Path
 
 user = 'mehak'
-known_extensions = {'rsna': 'dcm', 'chexpert': 'jpg', 'chestxray8': 'png', 'siim': 'dcm'}
+known_extensions = {'rsna': 'dcm', 'chexpert': 'jpg', 'chestxray8': 'png', 'siim': 'dcm', 'mgh': ''}
 known_tasks = {'rsna': 'detect', 'siim': 'segment'}
 
 # root = Part of the share dedicated to the object detection subproject

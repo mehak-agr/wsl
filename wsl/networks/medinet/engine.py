@@ -4,6 +4,7 @@ from typing import Dict, Any
 import numpy as np
 from wsl.networks.medinet.utils import regression_accuracy
 from sklearn.metrics import r2_score
+from scipy.stats import spearmanr
 from monai.metrics import compute_roc_auc, compute_confusion_metric
 import torch
 
@@ -56,9 +57,9 @@ def engine(loader: Any, checkpoint: Dict[str, Any],
         rmetric = r2_score(all_labels, all_preds)
         a1 = regression_accuracy(all_labels, all_preds, error_range)
         a2 = regression_accuracy(all_labels, all_preds, error_range)
-        summary = (f'Epoch Summary- Loss:{round(loss, 3)}  R2:{round(rmetric, 1)} ' +
-                   f'Accuracy at {error_range}:{round(100 * a1, 1)} ' +
-                   f'Accuracy at {(error_range * 2)}:{round(100 * a2, 1)}')
+        spear, pvalue = spearmanr(all_preds, all_labels)
+        summary = (f'Epoch Summary- Loss:{round(loss, 3)}  R2:{round(rmetric, 1)} + Spearman Coeff.:{round(spear, 2)} + PValue:{round(pvalue, 2)}' +
+                   f'Accuracy at {error_range}:{round(100 * a1, 1)} + Accuracy at {(error_range * 2)}:{round(100 * a2, 1)}')
 
     print(summary)
     return loss, rmetric, summary

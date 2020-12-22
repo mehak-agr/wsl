@@ -70,7 +70,7 @@ class Loader(Dataset):
             self.pos_weight = [round((len(col) - sum(col)) / sum(col), 2) for col in zip(*self.labels)]
 
     def load_image(self, path: Path):
-        if self.extension == 'dcm':
+        if self.extension == 'dcm' or self.extension == '':
             ref = pydicom.dcmread(path)
             img = ref.pixel_array
             pi = ref.PhotometricInterpretation
@@ -86,7 +86,10 @@ class Loader(Dataset):
 
     def __getitem__(self, idx):
         name = self.names[idx]
-        path = self.datapath / f'{name}.{self.extension}'
+        if self.extension != '':
+            path = self.datapath / f'{name}.{self.extension}'
+        else:
+            path = self.datapath / name
         img = self.load_image(path)
         img = self.image_transforms(img)
 
