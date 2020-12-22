@@ -22,6 +22,7 @@ def main(debug: bool,
          column: str,
          extension: str,
          classes: int,
+         augmentation: bool,
          network: str,
          depth: int,
          wildcat: bool,
@@ -85,9 +86,10 @@ def main(debug: bool,
                            classes=classes,
                            column=column,
                            regression=regression,
+                           augmentation=augmentation,
                            debug=debug)
     train_loader = DataLoader(  # type: ignore
-        train_dataset, batch_size=batchsize, num_workers=workers, pin_memory=True, shuffle=True
+        train_dataset, batch_size=batchsize, num_workers=workers, shuffle=True
     )
 
     print('test...', end='', flush=True)
@@ -99,7 +101,7 @@ def main(debug: bool,
                           regression=regression,
                           debug=debug)
     test_loader = DataLoader(  # type: ignore
-        test_dataset, batch_size=batchsize, num_workers=workers, pin_memory=True, shuffle=True
+        test_dataset, batch_size=batchsize, num_workers=workers, shuffle=True
     )
     print('done')
 

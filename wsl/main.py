@@ -31,6 +31,7 @@ def main():
     medinet_parser.add_argument('--column', type=str, default='Pneumonia', help='Name of the column that contains ground truth in info.csv')
     medinet_parser.add_argument('--extension', type=str, default='dcm')
     medinet_parser.add_argument('--classes', type=int, default=1)
+    medinet_parser.add_argument('--augmentation', action='store_true', help='Add augmentation to data')
     # Type of model
     medinet_parser.add_argument('--network', type=str, default='densenet', help='Choose - densenet/resnet/vgg')
     medinet_parser.add_argument('--depth', type=int, default=121, help='Model depth')
@@ -42,7 +43,7 @@ def main():
     medinet_parser.add_argument('--name', type=str, help='Model name to resume')
     # General parameters
     medinet_parser.add_argument('--lr', type=float, default=1e-5)
-    medinet_parser.add_argument('--batchsize', type=int, default=64)
+    medinet_parser.add_argument('--batchsize', type=int, default=16)
     medinet_parser.add_argument('--workers', type=int, default=4)
     medinet_parser.add_argument('--patience', type=int, default=5)
     medinet_parser.add_argument('--balanced', action='store_true')
