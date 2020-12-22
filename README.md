@@ -56,3 +56,14 @@ Your trained model will be here - wsl_model_dir / models /  <br />
 
 ## Upcoming updates
 - UNet for segmentation
+
+## Citation
+If you use this code for your research, please cite our paper:
+```
+@inproceedings{Medinet2020,
+  title={Towards Trainable Saliency Maps in Medical Imaging},
+  author={Mehak Aggarwal, Nishanth Arun, Sharut Gupta, Ashwin Vaswani, Bryan Chen, Matthew Li, Ken Chang, Jay Patel, Katherine Hoebel, Mishka Gidwan, Jayashree Kalpathy-Cramer, Praveer Singh},
+  booktitle={Machine Learning 4 Health, 2020 Neural Information Processing Systems (NeurIPS)},
+  year={2020}
+}
+```
