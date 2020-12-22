@@ -21,7 +21,7 @@ def engine(loader: Any, checkpoint: Dict[str, Any],
             class_loss = class_loss.mean()
             reg_loss = reg_loss.mean()
             loss = class_loss + reg_loss
-            
+
             if is_train:
                 loss.backward()
                 checkpoint['optimizer'].step()
@@ -53,10 +53,10 @@ def engine_boxes(loader: Any, checkpoint: Dict[str, Any]):
     all_preds = []
     all_labels = []
     map_scores = []
-    
+
     org_size = (1024, 1024)
     new_size = (224, 224)
-    
+
     threshold = 0.1
     box_labels = []
     box_scores = []
@@ -76,17 +76,17 @@ def engine_boxes(loader: Any, checkpoint: Dict[str, Any]):
             df['score'] += scores
             df['index'] += indices
             df['box'] += boxes
-            
+
             all_labels.append(data[2])
             all_preds.append(max(scores + [0.0]))
-            
+
             ground_map = box_to_map(loader.df[loader.df.Id == data[3]].box.to_list(), np.zeros(org_size))
             predicted_map = box_to_map(boxes, np.zeros(org_size), scores)
             ground_map = cv2.resize(ground_map, new_size, interpolation=cv2.INTER_NEAREST).clip(0, 1)
             predicted_map = cv2.resize(predicted_map, new_size, interpolation=cv2.INTER_AREA).clip(0, 1)
             if data[2] != 0:
                 map_scores.append(average_precision_score(ground_map.flatten(), predicted_map.flatten()))
-            
+
             if len(boxes) > 1:
                 box = boxes[-1]
                 h, w = (box[0] + box[2] / 2) * new_size[0] / org_size[0], (box[1] + box[3] / 2) * new_size[1] / org_size[1]

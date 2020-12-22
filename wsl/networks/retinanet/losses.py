@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 import torch.nn as nn
 
@@ -77,12 +76,9 @@ class FocalLoss(nn.Module):
 
                 continue
 
-            IoU = calc_iou(anchors[0, :, :], bbox_annotation[:, :4]) # num_anchors x num_annotations
+            IoU = calc_iou(anchors[0, :, :], bbox_annotation[:, :4])  # num_anchors x num_annotations
 
-            IoU_max, IoU_argmax = torch.max(IoU, dim=1) # num_anchors x 1
-
-            #import pdb
-            #pdb.set_trace()
+            IoU_max, IoU_argmax = torch.max(IoU, dim=1)  # num_anchors x 1
 
             # compute the loss for classification
             targets = torch.ones(classification.shape) * -1
@@ -120,7 +116,7 @@ class FocalLoss(nn.Module):
             else:
                 cls_loss = torch.where(torch.ne(targets, -1.0), cls_loss, torch.zeros(cls_loss.shape))
 
-            classification_losses.append(cls_loss.sum()/torch.clamp(num_positive_anchors.float(), min=1.0))
+            classification_losses.append(cls_loss.sum() / torch.clamp(num_positive_anchors.float(), min=1.0))
 
             # compute the loss for regression
 
@@ -150,11 +146,11 @@ class FocalLoss(nn.Module):
                 targets = targets.t()
 
                 if torch.cuda.is_available():
-                    targets = targets/torch.Tensor([[0.1, 0.1, 0.2, 0.2]]).cuda()
+                    targets = targets / torch.Tensor([[0.1, 0.1, 0.2, 0.2]]).cuda()
                 else:
-                    targets = targets/torch.Tensor([[0.1, 0.1, 0.2, 0.2]])
+                    targets = targets / torch.Tensor([[0.1, 0.1, 0.2, 0.2]])
 
-                negative_indices = 1 + (~positive_indices)
+                # negative_indices = 1 + (~positive_indices)
 
                 regression_diff = torch.abs(targets - regression[positive_indices, :])
 
