@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import numpy as np
-from typing import Dict, Tuple, List, Any
+from typing import List, Any
 
 
 def regression_accuracy(true_labels, predicted_labels, error_range):
@@ -11,9 +11,9 @@ def regression_accuracy(true_labels, predicted_labels, error_range):
     return correct / len(true_labels)
 
 
-def box_to_map(boxes: List, mask, scores: Any=1):
+def box_to_map(boxes: List, mask, scores: Any = 1):
     # box = [x1, y1, x2, y2]
-    if not isinstance(scores, list): 
+    if not isinstance(scores, list):
         scores = [scores] * len(boxes)
     for idx, box in enumerate(boxes):
         mask[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = scores[idx]
@@ -43,7 +43,7 @@ def mask2rle(img, width, height):
             elif runStart > -1:
                 runLength += 1
             lastColor = currentColor
-            currentPixel+=1
+            currentPixel += 1
 
     return " ".join(rle)
 
@@ -58,7 +58,7 @@ def rle2mask(rle, mask):
     current_position = 0
     for index, start in enumerate(starts):
         current_position += start
-        mask[current_position:current_position+lengths[index]] = 1
+        mask[current_position:current_position + lengths[index]] = 1
         current_position += lengths[index]
 
     return mask.reshape(width, height)

@@ -8,7 +8,7 @@ from sklearn.linear_model import LogisticRegressionCV
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 
-from wsl.locations import wsl_model_dir, wsl_csv_dir
+from wsl.locations import wsl_model_dir
 from wsl.loaders.class_loaders import Loader
 import torch
 from torch.utils.data import DataLoader
@@ -169,16 +169,13 @@ def main(model: str = 'rsna_Pneumonia_lr1e-05_bs64_adam_resnet50_first', debug: 
 
     def dict_to_numpy(scores):
         scores_list = []
-        for key, value in scores.items():
+        for value in scores.values():
             scores_list.append(value.tolist())
         scores = np.stack(scores_list)
         return scores.T
 
-
     print('get mahalanobis scores...')
     magnitudes = [0.0, 0.001, 0.005, 0.01, 0.05, 0.1]
-    maha_in = {}
-    maha_out = {}
     for magnitude in magnitudes:
         print('Noise:', magnitude)
         print('Data - Assumed negative class:', configs['data'])

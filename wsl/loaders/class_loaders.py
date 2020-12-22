@@ -37,7 +37,7 @@ class Loader(Dataset):
         else:
             self.extension = extension
 
-        df = pd.read_csv(wsl_csv_dir / data / 'info.csv', converters={column: literal_eval, 'box':literal_eval})
+        df = pd.read_csv(wsl_csv_dir / data / 'info.csv', converters={column: literal_eval, 'box': literal_eval})
         self.df = df
         df = df.drop_duplicates(subset='Id', keep='first', ignore_index=True)
         Ids = pd.read_csv(wsl_csv_dir / data / f'{split}.csv').Id.tolist()

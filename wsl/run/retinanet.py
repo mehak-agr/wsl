@@ -5,7 +5,6 @@ import json
 import requests
 import datetime
 import matplotlib.pyplot as plt
-import pandas as pd
 
 from wsl.locations import wsl_model_dir
 
@@ -34,7 +33,7 @@ def main(debug: bool,
          workers: int,
          patience: int,
          ID: str):
-    
+
     # ------------------------------------------------------
     if resume:
         matching_models = list(wsl_model_dir.glob(f'*{name}'))
@@ -105,9 +104,9 @@ def main(debug: bool,
 
     if classes > 1:
         print('Class List: ', train_dataset.class_names)
-        
+
     # ------------------------------------------------------
-    
+
     if results:
         for model_dir in model_dirs:
             print('Initializing optim/checkpoint...')
@@ -173,7 +172,6 @@ def main(debug: bool,
     best_loss = checkpoint['loss']
     print('done')
 
-        
     # ------------------------------------------------------
 
     while (checkpoint['epoch'] - best_epoch <= patience) and checkpoint['epoch'] < 150:
@@ -242,7 +240,7 @@ def main(debug: bool,
     df.to_csv(model_dir / 'results.csv')
     print('Finished:', rmetric)
     print(f'You can find the calculated results at - {model_dir}/results.csv')
-    
+
     configs = {
         'name': mname,
         'time': datetime.datetime.now().strftime('%d_%m_%H_%M_%S'),

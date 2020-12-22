@@ -20,7 +20,7 @@ def engine(loader: Any, checkpoint: Dict[str, Any],
 
     with torch.set_grad_enabled(is_train):
         for iter_num, data in enumerate(loader):
-            name = data[0]
+            # name = data[0]
             imgs = data[1].cuda().float()
             labels = data[2].cuda().float()
 

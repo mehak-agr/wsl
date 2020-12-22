@@ -10,17 +10,17 @@ class BackProp():
     """
         Produces gradients generated with integrated gradients from the image
     """
-    def __init__(self, model, GBP = False):
+    def __init__(self, model, GBP=False):
         self.model = model
         self.gradients = None
         self.model.eval()
         self.GBP = GBP
-        
+
         if self.GBP:
             self.forward_relu_outputs = []
             self.update_relus()
             self.hook_first()
-        
+
     def hook_first(self):
         def hook_function(module, grad_in, grad_out):
             self.gradient = grad_in[0]
@@ -49,11 +49,10 @@ class BackProp():
             self.forward_relu_outputs.append(ten_out)
 
         # Loop through layers, hook up ReLUs
-        for pos, module in self.model.features._modules.items():
+        for _pos, module in self.model.features._modules.items():
             if isinstance(module, ReLU):
                 module.register_backward_hook(relu_backward_hook_function)
                 module.register_forward_hook(relu_forward_hook_function)
-
 
     def generate_images_on_linear_path(self, input_image, steps):
         step_list = np.arange(steps + 1) / steps
@@ -61,18 +60,18 @@ class BackProp():
         return xbar_list
 
     def generate_gradients(self, img):
-        
+
         # Forward
         img.requires_grad = True
         model_output = self.model(img)
-        
+
         # Zero grads
         self.model.zero_grad()
 
         # Target for backprop
         one_hot_output = torch.FloatTensor(1, model_output.size()[-1]).zero_().cuda()
         one_hot_output[0] = 1
-        
+
         # Backward pass
         model_output.backward(gradient=one_hot_output)
 
@@ -84,21 +83,21 @@ class BackProp():
     def generate_integrated_gradients(self, img, steps):
         xbar_list = self.generate_images_on_linear_path(img, steps)
         integrated_grads = np.zeros((img.shape[-2], img.shape[-1]))
-        
+
         for xbar_image in xbar_list:
             single_integrated_grad = self.generate_gradients(xbar_image)
             # Add rescaled grads from xbar images
             integrated_grads += single_integrated_grad / steps
-            
+
         return integrated_grads
-    
+
     def generate_smooth_grad(self, img, param_n, param_sigma_multiplier, steps):
         # Generate an empty image/matrix
         smooth_grad = np.zeros((img.shape[-2], img.shape[-1]))
 
         mean = 0
         sigma = param_sigma_multiplier / (torch.max(img) - torch.min(img)).item()
-        for x in range(param_n):
+        for _x in range(param_n):
             noise = Variable(img.data.new(img.size()).normal_(mean, sigma**2))
             noisy_img = img + noise
             if steps == 0:
@@ -109,22 +108,22 @@ class BackProp():
 
         smooth_grad = smooth_grad / param_n
         return smooth_grad
-    
+
     def generate_cam(self, img):
         img.requires_grad = True
         output, feat_map, _, handle = self.model(img)
-        
+
         one_hot_output = torch.FloatTensor(1, output.size()[-1]).zero_().cuda()
         one_hot_output[0] = 1
         self.model.zero_grad()
         output.backward(gradient=one_hot_output, retain_graph=True)
-        
+
         feat_map = feat_map.squeeze(dim=0).data.cpu().numpy()
         guided_gradients = self.model.gradient.squeeze(dim=0).data.cpu().numpy()
         weights = np.mean(guided_gradients, axis=(1, 2))
-        
+
         handle.remove()
-        
+
         cam = np.ones(feat_map.shape[1:], dtype=np.float32)
         for i, w in enumerate(weights):
             cam += w * feat_map[i, :, :]

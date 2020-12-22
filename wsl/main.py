@@ -56,7 +56,7 @@ def main():
     # Identification parameter
     medinet_parser.add_argument('--ID', type=str, default='placeholder', help='Special ID to identify a set of models')
     medinet_parser.set_defaults(func=medinet.main)
-    
+
     # retinanet - the main retinanet routine
     retinanet_parser = subparsers.add_parser('retinanet', help='retinanet a model')
     # Type of dataset
@@ -81,7 +81,7 @@ def main():
     # Identification parameter
     retinanet_parser.add_argument('--ID', type=str, default='placeholder', help='Special ID to identify a set of models')
     retinanet_parser.set_defaults(func=retinanet.main)
-    
+
     # Wild - the main wild map calculating routine
     saliency_parser = subparsers.add_parser('saliency', help='Summarize all saliency maps results for models')
     # Parameters
@@ -89,7 +89,7 @@ def main():
     saliency_parser.add_argument('--start', type=int, default=0)
     saliency_parser.add_argument('--plot', action='store_true', help='Plot the maps')
     saliency_parser.set_defaults(func=saliency.main)
-    
+
     # OOD - the main out of order distribution testing routine
     ood_parser = subparsers.add_parser('ood', help='Out of order distribution')
     # Parameters
