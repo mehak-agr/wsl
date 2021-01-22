@@ -43,7 +43,7 @@ def main():
     medinet_parser.add_argument('--name', type=str, help='Model name to resume')
     # General parameters
     medinet_parser.add_argument('--lr', type=float, default=1e-5)
-    medinet_parser.add_argument('--batchsize', type=int, default=16)
+    medinet_parser.add_argument('--batchsize', type=int, default=32)
     medinet_parser.add_argument('--workers', type=int, default=4)
     medinet_parser.add_argument('--patience', type=int, default=5)
     medinet_parser.add_argument('--balanced', action='store_true')

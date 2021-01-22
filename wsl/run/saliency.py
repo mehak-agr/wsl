@@ -21,12 +21,15 @@ def main(name: str, start: int, plot: bool):
     if name == 'all':
         model_dirs = wsl_model_dir.glob('rsna*')
     else:
-        model_dirs = wsl_model_dir.glob(f'rsna*{name}*')
+        if 'rsna' in name:
+            model_dirs = wsl_model_dir.glob(f'*{name}*')
+        else:
+            model_dirs = wsl_model_dir.glob(f'rsna*{name}*')
 
     model_dirs = list(model_dirs)
-    model_dirs = model_dirs[start:start + 30]
-
-    print('Number of potential model directory matches =', len(model_dirs))
+    num_model_dirs = 50
+    print(f'Number of potential model directory matches = {len(model_dirs)}, but doing top {num_model_dirs} models for now.')
+    model_dirs = model_dirs[start:start + num_model_dirs]
 
     if plot:
         ncolors = 256
@@ -65,6 +68,7 @@ def main(name: str, start: int, plot: bool):
         checkpoint['model'].gradient = None
         checkpoint['model'].eval()
 
+        # currently hardcoded, should ideally be inferred from image
         org_size = (1024, 1024)
         new_size = (224, 224)
 
@@ -128,15 +132,15 @@ def main(name: str, start: int, plot: bool):
             all_scores['GGCAM'].append(aupr(ground_map.flatten(), ggcam.flatten()))
 
             if plot:
-                row, col = range(2), range(4)
-                map_names = [['XRAY', 'GRAD', 'SG', 'IG', 'SIG'], ['MASK', 'GCAM', 'GBP', 'GGCAM', 'WILD']]
-                maps = [[ground_map, grad, sg, ig], [ground_map, sig, gcam, gbp, ggcam]]
+                row, col = 2, 5
+                map_names = [['XRAY', 'WILD', 'GRAD', 'GCAM', 'GGCAM'], ['MASK', 'GBP', 'SG', 'IG', 'SIG']]
+                maps = [[img, wild, grad, gcam, ggcam], [ground_map, gbp, sg, ig, sig]]
                 x = LinearSegmentedColormap.from_list(name='rainbow', colors=color_array)
                 plt.register_cmap(cmap=x)
 
-                fig, ax = plt.subplots(2, 4, figsize=(18, 8))
-                for i in row:
-                    for j in col:
+                fig, ax = plt.subplots(row, col, figsize=(18, 8))
+                for i in range(row):
+                    for j in range(col):
                         ax[i, j].imshow(np.transpose(img, (1, 2, 0)))
                         if not (i == 0 and j == 0):
                             ax[i, j].imshow(maps[i][j], alpha=0.8, cmap='rainbow')
@@ -159,3 +163,5 @@ def main(name: str, start: int, plot: bool):
 
         with open(model_dir / 'configs.json', 'w') as fp:
             json.dump(configs, fp)
+
+

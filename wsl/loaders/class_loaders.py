@@ -15,7 +15,8 @@ from monai.transforms import (
     RepeatChannel,
     Resize,
     CastToType,
-    ToTensor
+    ToTensor,
+    Affine
 )
 import torch
 from wsl.locations import wsl_data_dir, wsl_csv_dir, known_extensions
@@ -59,14 +60,15 @@ class Loader(Dataset):
             ToTensor()])
 
         self.augmentation = augmentation
-        self.rand_rotation: float = 20
-        self.rand_scale: List = [0.8, 1.2]
-        self.rand_shear: float = 0.25
-        self.rand_translation: List = [50.0, 50.0]
-        self.rand_roll: Dict = {'h': False, 'w': False}
-        self.rand_flip: List = [False, True, False]
-        self.noise_factor: float = 0.05
-        self.noise_dist = np.random.normal  # or np.random.poisson
+        if augmentation:
+            self.augmentation = Affine(
+                rotate_params = np.pi / 6,
+                scale_params = (1.2, 1.2),
+                translate_params = (50, 50),
+                padding_mode = 'zeros'
+            )
+        else:
+            self.augmentation = None
 
         if regression:
             self.lmax = df[column].max()
@@ -80,55 +82,6 @@ class Loader(Dataset):
                 self.labels = [list(x.values()) for x in self.labels]
 
             self.pos_weight = [round((len(col) - sum(col)) / sum(col), 2) for col in zip(*self.labels)]
-
-    def augment(self, img: np.array):
-        if self.rand_rotation or self.rand_scale or self.rand_shear or self.rand_translation:
-            # Perform a random affine transformation
-            # Rotation
-            theta = np.random.uniform(-self.rand_rotation * np.pi / 180.0, self.rand_rotation * np.pi / 180.0) if self.rand_rotation else 0.0
-            # Shear
-            shear_factor = np.random.uniform(-self.rand_shear, self.rand_shear) if self.rand_shear else 0.0
-            # Anisotropic scaling in two dimensions
-            scale = np.random.uniform(self.rand_scale[0], self.rand_scale[1], size=2) if self.rand_scale else (1.0, 1.0)
-            # Translations
-            if self.rand_translation:
-                translation = (
-                    np.random.uniform(-self.rand_translation[0], self.rand_translation[0]),
-                    np.random.uniform(-self.rand_translation[1], self.rand_translation[1])
-                )
-            else:
-                translation = (0.0, 0.0)
-
-            # Construct a transform that moves the center to the origin, performs the affine transform, and then moves
-            # back
-            affine_xform = transform.AffineTransform(
-                rotation=theta, shear=shear_factor, scale=scale, translation=translation
-            )
-            center_xform = transform.AffineTransform(translation=(-img.shape[1] / 2, -img.shape[2] / 2))
-            inv_center_xform = transform.AffineTransform(translation=(img.shape[1] / 2, img.shape[2] / 2))
-            full_xform = center_xform + affine_xform + inv_center_xform
-
-            img = transform.warp(np.moveaxis(img, 0, -1), full_xform, cval=-1000, order=1, preserve_range=True)
-            img = np.moveaxis(img, -1, 0)
-
-        if self.rand_roll['h']:
-            h_roll = round(self.rand_roll['h'] * np.random.random())
-            img = np.roll(img, h_roll, axis=1)
-
-        if self.rand_roll['w']:
-            w_roll = round(self.rand_roll['w'] * np.random.random())
-            img = np.roll(img, w_roll, axis=2)
-
-        if sum(self.rand_flip):
-            for i in range(img.ndim):
-                if np.random.randint(0, self.rand_flip[i] + 1):
-                    img = np.flip(img, axis=i)
-
-        if self.noise_factor:
-            noise = self.noise_factor * self.noise_dist(size=img.shape)
-            img += noise
-
-        return img
 
     def load_image(self, path: Path):
         if self.extension == 'dcm' or self.extension == '':
@@ -153,9 +106,9 @@ class Loader(Dataset):
             path = self.datapath / name
 
         img = self.load_image(path)
-        if self.augmentation:
-            img = self.augment(img)
         img = self.image_transforms(img)
+        if self.augmentation is not None:
+            img = self.augmentation(img)
 
         label = self.labels[idx]
         label = torch.Tensor(label)

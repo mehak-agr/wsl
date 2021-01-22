@@ -26,6 +26,7 @@ def engine(loader: Any, checkpoint: Dict[str, Any],
 
             predicted = checkpoint['model'](imgs)
             loss = checkpoint['criterion'](predicted, labels)
+            predicted, labels = predicted.detach(), labels.detach()
 
             if is_train:
                 loss.backward()
@@ -33,11 +34,13 @@ def engine(loader: Any, checkpoint: Dict[str, Any],
                 checkpoint['optimizer'].zero_grad()
 
             overall_loss.append(float(loss.item()))
-            all_preds = torch.cat((predicted.detach(), all_preds))
-            all_labels = torch.cat((labels.detach(), all_labels))
+            all_preds = torch.cat((predicted, all_preds))
+            all_labels = torch.cat((labels, all_labels))
 
             speed = batchsize * iter_num // (time.time() - start)
             print('Epoch:', checkpoint['epoch'], 'Iter:', iter_num,
+                  'Pred Avg:', round(predicted.mean().item(), 3),
+                  'Label Avg:', round(labels.mean().item(), 3),
                   'Running loss:', round(np.mean(overall_loss), 3),
                   'Speed:', int(speed), 'img/s', end='\r', flush=True)
 
@@ -58,7 +61,7 @@ def engine(loader: Any, checkpoint: Dict[str, Any],
         a1 = regression_accuracy(all_labels, all_preds, error_range)
         a2 = regression_accuracy(all_labels, all_preds, error_range)
         spear, pvalue = spearmanr(all_preds, all_labels)
-        summary = (f'Epoch Summary- Loss:{round(loss, 3)}  R2:{round(rmetric, 1)} Spearman Coeff.:{round(spear, 2)} PValue:{round(pvalue, 2)} ' +
+        summary = (f'Epoch Summary- Loss:{round(loss, 3)} SpearCoef:{round(spear, 2)} PValue:{round(pvalue, 3)} R2:{round(rmetric, 1)} ' +
                    f'Accuracy at {error_range}:{round(100 * a1, 1)} Accuracy at {(error_range * 2)}:{round(100 * a2, 1)}')
 
     print(summary)
