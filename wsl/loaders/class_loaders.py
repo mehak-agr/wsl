@@ -24,12 +24,11 @@ from wsl.locations import wsl_data_dir, wsl_csv_dir, known_extensions
 
 class Loader(Dataset):
     def __init__(self, data: str, split: str, extension: str,
-                 classes: int, column: str, regression: bool,
+                 classes: int, column: str, variable_type: str,
                  augmentation: bool = False, debug: bool = False):
 
-        if regression and classes != 1:
-            print('Support for multi-class regression is not available.')
-            sys.exit(1)
+        if classes != 1:
+            print('Note: Ensure all labels are of a single type.')
 
         self.datapath = wsl_data_dir / data
         self.data = data
@@ -48,6 +47,7 @@ class Loader(Dataset):
 
         self.names = df.Id.to_list()
         self.labels = df[column].tolist()
+        self.variable_type = variable_type
 
         if debug:
             self.names = self.names[0:100]
@@ -70,17 +70,15 @@ class Loader(Dataset):
         else:
             self.augmentation = None
 
-        if regression:
-            self.lmax = df[column].max()
-            self.lmin = df[column].min()
-            self.labels = [[round((x - self.lmin) / self.lmax, 2)] for x in self.labels]
-        else:
+        if self.variable_type != 'categorical':
             if classes == 1:
                 self.labels = [[x] for x in self.labels]
             else:
                 self.class_names = self.labels[0].keys()
+                print('\nClass List: ', self.class_names)
                 self.labels = [list(x.values()) for x in self.labels]
 
+            # only matters for balanced case for binary variable type
             self.pos_weight = [round((len(col) - sum(col)) / sum(col), 2) for col in zip(*self.labels)]
 
     def load_image(self, path: Path):
@@ -90,6 +88,9 @@ class Loader(Dataset):
             pi = ref.PhotometricInterpretation
             if pi.strip() == 'MONOCHROME1':
                 img = -img
+        elif self.extension == 'npy':
+            img = np.load(path)
+            img = 0.2989 * img[:, :, 0] + 0.5870 * img[:, :, 1] + 0.1140 * img[:, :, 2]
         else:
             img = skimage.io.imread(path, as_gray=True)
 
@@ -111,9 +112,10 @@ class Loader(Dataset):
             img = self.augmentation(img)
 
         label = self.labels[idx]
-        label = torch.Tensor(label)
-
-        return name, img, label
+        if self.variable_type == 'categorical':
+            return name, img, label
+        else:
+            return name, img, torch.FloatTensor(label)
 
     def __len__(self):
         return len(self.names)

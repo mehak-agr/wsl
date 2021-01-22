@@ -55,7 +55,7 @@ def main(name: str, start: int, plot: bool):
                              extension=configs['extension'],
                              classes=configs['classes'],
                              column=configs['column'],
-                             regression=configs['regression'])
+                             variable_type=configs['variable_type'])
             print('Number of images -', len(dataset))
 
         print(f'Model {m_idx} : {model_dir}')

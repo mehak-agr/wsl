@@ -38,7 +38,7 @@ def main(debug: bool,
          maps: int,
          alpha: float,
          k: int,
-         regression: bool,
+         variable_type: str,
          error_range: int,
          ID: str):
 
@@ -85,7 +85,7 @@ def main(debug: bool,
                            extension=extension,
                            classes=classes,
                            column=column,
-                           regression=regression,
+                           variable_type=variable_type,
                            augmentation=augmentation,
                            debug=debug)
     train_loader = DataLoader(  # type: ignore
@@ -98,34 +98,29 @@ def main(debug: bool,
                           extension=extension,
                           classes=classes,
                           column=column,
-                          regression=regression,
+                          variable_type=variable_type,
                           debug=debug)
     test_loader = DataLoader(  # type: ignore
         test_dataset, batch_size=batchsize, num_workers=workers, shuffle=True
     )
     print('done')
 
-    if regression:
-        reg_args = {'max': train_dataset.lmax,
-                    'min': train_dataset.lmin,
-                    'error_range': error_range}
-    else:
-        reg_args = None
-
-    if classes > 1:
-        print('Class List: ', train_dataset.class_names)
-
     # ------------------------------------------------------
     print('Initializing optim/criterion...', end='')
     if resume:
         checkpoint = torch.load(full_mname / 'best.pt', map_location='cuda:0' if torch.cuda.is_available() else 'cpu')
     else:
-        if regression:
+        if variable_type == 'continous':
             criterion = nn.MSELoss()
-        elif balanced:
-            criterion = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor(train_dataset.pos_weight))
+        elif variable_type == 'categorical':
+            criterion = nn.CrossEntropyLoss()
+        elif variable_type == 'binary':
+            if balanced:
+                criterion = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor(train_dataset.pos_weight))
+            else:
+                criterion = nn.BCEWithLogitsLoss()
         else:
-            criterion = nn.BCEWithLogitsLoss()
+            raise ValueError('Variable type should be one of binary/categorical/continous.')
         criterion = criterion.cuda()
 
         model = Architecture(network, depth, wildcat, classes, maps, alpha, k, pretrained)
@@ -160,15 +155,15 @@ def main(debug: bool,
         checkpoint['epoch'] += 1
         print('Epoch:', checkpoint['epoch'], '-Training')
         checkpoint['model'].train()
-        checkpoint['loss'], rmetric, summary_train = engine(train_loader, checkpoint,
-                                                            batchsize, classes, reg_args, is_train=True)
+        checkpoint['loss'], rmetric, summary_train = engine(train_loader, checkpoint, batchsize,
+                                                            classes, variable_type, error_range, is_train=True)
         checkpoint['train_loss_all'].append(checkpoint['loss'])
         checkpoint['train_rmetric_all'].append(rmetric)
 
         print('Epoch:', checkpoint['epoch'], '-Testing')
         checkpoint['model'].eval()
-        checkpoint['loss'], rmetric, summary_test = engine(test_loader, checkpoint,
-                                                           batchsize, classes, reg_args, is_train=False)
+        checkpoint['loss'], rmetric, summary_test = engine(test_loader, checkpoint, batchsize,
+                                                           classes, variable_type, error_range, is_train=False)
         checkpoint['test_loss_all'].append(checkpoint['loss'])
         checkpoint['test_rmetric_all'].append(rmetric)
 
@@ -228,8 +223,8 @@ def main(debug: bool,
         'maps': maps if wildcat else None,
         'alpha': alpha if wildcat else None,
         'k': k if wildcat else None,
-        'regression': regression,
-        'error_range': error_range if regression else None,
+        'variable_type': variable_type,
+        'error_range': error_range if variable_type == 'continous' else None,
         'best_epoch': best_epoch,
         'best_loss': best_loss,
         'rmetric': checkpoint['test_rmetric_all'][best_epoch - 1],

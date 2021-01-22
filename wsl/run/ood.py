@@ -24,7 +24,7 @@ from torch.utils.data import DataLoader
 # -
 
 def main(model: str = 'rsna_Pneumonia_lr1e-05_bs64_adam_resnet50_first', debug: bool = True, data: str = 'siim', column: str = 'Pneumothorax', extension: str = 'dcm', classes: int = 1):
-    path = wsl_model_dir / model
+    path = wsl_archived_model_dir / model
     print(f'Model: {path}')
     assert path.exists()
 

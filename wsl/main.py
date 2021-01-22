@@ -42,8 +42,8 @@ def main():
     medinet_parser.add_argument('--resume', action='store_true', help='Resume network')
     medinet_parser.add_argument('--name', type=str, help='Model name to resume')
     # General parameters
-    medinet_parser.add_argument('--lr', type=float, default=1e-5)
-    medinet_parser.add_argument('--batchsize', type=int, default=32)
+    medinet_parser.add_argument('--lr', type=float, default=1e-4)
+    medinet_parser.add_argument('--batchsize', type=int, default=8)
     medinet_parser.add_argument('--workers', type=int, default=4)
     medinet_parser.add_argument('--patience', type=int, default=5)
     medinet_parser.add_argument('--balanced', action='store_true')
@@ -52,7 +52,7 @@ def main():
     medinet_parser.add_argument('--alpha', default=0.0, type=float, help='Global Average Pooling layer weight')
     medinet_parser.add_argument('--k', default=1, type=float, help='local pixels choosen')
     # Regression parameters
-    medinet_parser.add_argument('--regression', action='store_true')
+    medinet_parser.add_argument('--variable_type', default='binary', type=str, help='binary/categorical/continous')
     medinet_parser.add_argument('--error_range', default=4, type=int, help='absolute error allowed')
     # Identification parameter
     medinet_parser.add_argument('--ID', type=str, default='placeholder', help='Special ID to identify a set of models')
@@ -76,9 +76,9 @@ def main():
     retinanet_parser.add_argument('--name', type=str, help='Model name to resume or compute final box results')
     # General parameters
     retinanet_parser.add_argument('--lr', type=float, default=1e-6)
-    retinanet_parser.add_argument('--batchsize', type=int, default=8)
+    retinanet_parser.add_argument('--batchsize', type=int, default=64)
     retinanet_parser.add_argument('--workers', type=int, default=4)
-    retinanet_parser.add_argument('--patience', type=int, default=10)
+    retinanet_parser.add_argument('--patience', type=int, default=5)
     # Identification parameter
     retinanet_parser.add_argument('--ID', type=str, default='placeholder', help='Special ID to identify a set of models')
     retinanet_parser.set_defaults(func=retinanet.main)

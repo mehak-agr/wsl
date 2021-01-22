@@ -35,15 +35,15 @@ class Architecture(nn.Module):
 
         elif self.network == 'resnet':
             if depth == 18:
-                model = models.resnet18(pretrained=True, progress=False)
+                model = models.resnet18(pretrained, progress=False)
             elif depth == 34:
-                model = models.resnet34(pretrained=True, progress=False)
+                model = models.resnet34(pretrained, progress=False)
             elif depth == 50:
-                model = models.resnet50(pretrained=True, progress=False)
+                model = models.resnet50(pretrained, progress=False)
             elif depth == 101:
-                model = models.resnet101(pretrained=True, progress=False)
+                model = models.resnet101(pretrained, progress=False)
             elif depth == 152:
-                model = models.resnet152(pretrained=True, progress=False)
+                model = models.resnet152(pretrained, progress=False)
             else:
                 raise ValueError('Unsupported model depth, must be one of 18, 34, 50, 101, 152')
             in_ftrs = model.fc.in_features
@@ -60,7 +60,7 @@ class Architecture(nn.Module):
 
         elif network == 'vgg':
             if depth == 19:
-                model = models.vgg19(pretrained=True, progress=False)
+                model = models.vgg19(pretrained, progress=False)
             else:
                 raise ValueError('Unsupported model depth, must be one of 19')
             in_ftrs = model.features[34].out_channels

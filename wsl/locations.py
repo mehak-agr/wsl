@@ -2,20 +2,25 @@
 from pathlib import Path
 
 user = 'mehak'
-known_extensions = {'rsna': 'dcm', 'chexpert': 'jpg', 'chestxray8': 'png', 'siim': 'dcm', 'mgh': ''}
-known_tasks = {'rsna': 'detect', 'siim': 'segment'}
+known_extensions = {'rsna': 'dcm', 'chexpert': 'jpg', 'chestxray8': 'png', 'siim': 'dcm',
+                    'covid_mgh': '', 'covid_dasa': '', 'covid_nwh': '',
+                    'cancer_mgh': 'npy', 'cancer_dmist2': 'npy', 'cancer_dmist3': 'npy', 'cancer_dmist4': 'npy'}
+known_tasks = {'rsna': 'detect', 'siim': 'segment'}  # everything else - solely, classification
 
-# root = Part of the share dedicated to the object detection subproject
-# wsl_data_dir = Location of available datasets
-# wsl_csv_dir = Location of csvs
-# wsl_model_dir = Location of model dir where checkpoints are stored
-# wsl_summary_dir = Location of model dir where checkpoints are stored
+'''
+root = Part of the share dedicated to the object detection subproject
+wsl_data_dir = Location of available datasets
+wsl_csv_dir = Location of csvs
+wsl_model_dir = Location of model dir where checkpoints are stored
+wsl_summary_dir = Location of model dir where checkpoints are stored
+'''
 
 if user == 'mehak':
     root = Path('/data/mehak.aggarwal/data/2015P002510/Mehak/git_wsl')
     wsl_data_dir = root / 'data'
     wsl_csv_dir = root / 'wsl' / 'wsl' / 'csvs'
     wsl_model_dir = root / 'models'
+    wsl_archived_model_dir = root / 'archived_models'
     wsl_summary_dir = root / 'summary'
     wsl_plot_dir = root / 'plots'
 else:
