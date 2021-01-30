@@ -13,7 +13,6 @@ class Architecture(nn.Module):
                  classes: int,
                  maps: int,
                  alpha: float,
-                 k: int,
                  pretrained: bool = False,
                  get_map: bool = False):
         super(Architecture, self).__init__()
@@ -74,7 +73,7 @@ class Architecture(nn.Module):
             print('making wildcat model...', end='')
             self.classifier = nn.Conv2d(in_ftrs, maps * classes, kernel_size=1, stride=1, padding=0, bias=True)
             self.pool = nn.Sequential(ClassWisePool(maps),
-                                      WildcatPool2d(kmin=k, kmax=k, alpha=alpha))
+                                      WildcatPool2d(alpha=alpha))
         else:
             print('making baseline model...', end='')
             self.pool = nn.AdaptiveAvgPool2d(pool_size)

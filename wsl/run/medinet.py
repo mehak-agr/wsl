@@ -37,7 +37,6 @@ def main(debug: bool,
          balanced: bool,
          maps: int,
          alpha: float,
-         k: int,
          variable_type: str,
          error_range: int,
          ID: str):
@@ -70,7 +69,7 @@ def main(debug: bool,
                       ('_pre' if pretrained else '') +
                       ('_bal' if balanced else '') + '_' +
                       f'{network}{depth}' +
-                      (f'_wildcat_maps{maps}_alpha{alpha}_k{k}' if wildcat else '') + '_' +
+                      (f'_wildcat_maps{maps}_alpha{alpha}' if wildcat else '') + '_' +
                       mname)
 
         model_dir = wsl_model_dir / full_mname
@@ -123,7 +122,7 @@ def main(debug: bool,
             raise ValueError('Variable type should be one of binary/categorical/continous.')
         criterion = criterion.cuda()
 
-        model = Architecture(network, depth, wildcat, classes, maps, alpha, k, pretrained)
+        model = Architecture(network, depth, wildcat, classes, maps, alpha, pretrained)
         model = nn.DataParallel(model).cuda()
 
         if optim == 'sgd':
@@ -222,7 +221,6 @@ def main(debug: bool,
         'balanced': balanced,
         'maps': maps if wildcat else None,
         'alpha': alpha if wildcat else None,
-        'k': k if wildcat else None,
         'variable_type': variable_type,
         'error_range': error_range if variable_type == 'continous' else None,
         'best_epoch': best_epoch,

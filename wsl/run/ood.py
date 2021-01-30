@@ -8,23 +8,16 @@ from sklearn.linear_model import LogisticRegressionCV
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 
-from wsl.locations import wsl_model_dir
+from wsl.locations import wsl_model_dir, known_extensions
 from wsl.loaders.class_loaders import Loader
 import torch
 from torch.utils.data import DataLoader
 
 
-# +
-# model: str = 'rsna_Pneumonia_lr1e-05_bs64_adam_resnet50_first'
-# debug: bool = True
-# data: str = 'siim'
-# column: str = 'Pneumothorax'
-# extension: str = 'dcm'
-# classes: int = 1
-# -
+def main(model: str = 'cancer_dmist2_cancer_lr0.0001_bs8_adam_densenet121_romanticization',
+         data: str = 'cancer_dmist4', debug: bool = False):
 
-def main(model: str = 'rsna_Pneumonia_lr1e-05_bs64_adam_resnet50_first', debug: bool = True, data: str = 'siim', column: str = 'Pneumothorax', extension: str = 'dcm', classes: int = 1):
-    path = wsl_archived_model_dir / model
+    path = wsl_model_dir / model
     print(f'Model: {path}')
     assert path.exists()
 
@@ -42,7 +35,7 @@ def main(model: str = 'rsna_Pneumonia_lr1e-05_bs64_adam_resnet50_first', debug: 
                            extension=configs['extension'],
                            classes=configs['classes'],
                            column=configs['column'],
-                           regression=configs['regression'],
+                           variable_type=configs['variable_type'],
                            debug=debug)
     train_loader = DataLoader(  # type: ignore
         train_dataset, batch_size=configs['batchsize'], num_workers=4,
@@ -53,7 +46,7 @@ def main(model: str = 'rsna_Pneumonia_lr1e-05_bs64_adam_resnet50_first', debug: 
                            extension=configs['extension'],
                            classes=configs['classes'],
                            column=configs['column'],
-                           regression=configs['regression'],
+                           variable_type=configs['variable_type'],
                            debug=debug)
     valid_loader = DataLoader(  # type: ignore
         valid_dataset, batch_size=configs['batchsize'], num_workers=4,
@@ -61,10 +54,10 @@ def main(model: str = 'rsna_Pneumonia_lr1e-05_bs64_adam_resnet50_first', debug: 
 
     out_dataset = Loader(data=data,
                          split='valid',
-                         extension=extension,
-                         classes=classes,
-                         column=column,
-                         regression=False,
+                         extension=known_extensions[data],
+                         classes=configs['classes'],
+                         column=configs['column'],
+                         variable_type=configs['variable_type'],
                          debug=debug)
     out_loader = DataLoader(  # type: ignore
         out_dataset, batch_size=configs['batchsize'], num_workers=4,
@@ -102,8 +95,6 @@ def main(model: str = 'rsna_Pneumonia_lr1e-05_bs64_adam_resnet50_first', debug: 
                 _ = checkpoint['model'](imgs)
                 speed = configs['batchsize'] * idx // (time.time() - start)
                 print('Iter:', idx, 'Speed:', int(speed), 'img/s', end='\r', flush=True)
-                if idx > 20:
-                    break
         print('Total time:', time.time() - start, 'secs')
 
         print('calculating sample mean...')
@@ -164,7 +155,6 @@ def main(model: str = 'rsna_Pneumonia_lr1e-05_bs64_adam_resnet50_first', debug: 
 
             scores[name] = scores[name].cpu().numpy()
             handle.remove()
-            print()
         return scores
 
     def dict_to_numpy(scores):
@@ -193,5 +183,9 @@ def main(model: str = 'rsna_Pneumonia_lr1e-05_bs64_adam_resnet50_first', debug: 
         lr = LogisticRegressionCV(n_jobs=-1).fit(X_train, Y_train)
         Y_pred = lr.predict_proba(X_test)[:, 1]
         performance = roc_auc_score(Y_test, Y_pred)
-        print(performance)
+        print('Performance:', performance)
         print()
+
+
+if __name__ == '__main__':
+    main()

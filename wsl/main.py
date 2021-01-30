@@ -28,7 +28,7 @@ def main():
     # Type of dataset
     medinet_parser.add_argument('--debug', action='store_true', help='In debugging mode, runs for just 10 sample images.')
     medinet_parser.add_argument('--data', type=str, default='rsna', help='Type of dataset')
-    medinet_parser.add_argument('--column', type=str, default='Pneumonia', help='Name of the column that contains ground truth in info.csv')
+    medinet_parser.add_argument('--column', type=str, default='pneumonia', help='Name of the column that contains ground truth in info.csv')
     medinet_parser.add_argument('--extension', type=str, default='dcm')
     medinet_parser.add_argument('--classes', type=int, default=1)
     medinet_parser.add_argument('--augmentation', action='store_true', help='Add augmentation to data')
@@ -43,14 +43,13 @@ def main():
     medinet_parser.add_argument('--name', type=str, help='Model name to resume')
     # General parameters
     medinet_parser.add_argument('--lr', type=float, default=1e-4)
-    medinet_parser.add_argument('--batchsize', type=int, default=8)
+    medinet_parser.add_argument('--batchsize', type=int, default=32)
     medinet_parser.add_argument('--workers', type=int, default=4)
     medinet_parser.add_argument('--patience', type=int, default=5)
     medinet_parser.add_argument('--balanced', action='store_true')
     # Wildcat parameters
     medinet_parser.add_argument('--maps', default=1, type=int, help='maps per class')
-    medinet_parser.add_argument('--alpha', default=0.0, type=float, help='Global Average Pooling layer weight')
-    medinet_parser.add_argument('--k', default=1, type=float, help='local pixels choosen')
+    medinet_parser.add_argument('--alpha', default=0.05, type=float, help='Determines max area % to be pooled')
     # Regression parameters
     medinet_parser.add_argument('--variable_type', default='binary', type=str, help='binary/categorical/continous')
     medinet_parser.add_argument('--error_range', default=4, type=int, help='absolute error allowed')

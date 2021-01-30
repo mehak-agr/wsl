@@ -3,7 +3,7 @@ from pathlib import Path
 
 user = 'mehak'
 known_extensions = {'rsna': 'dcm', 'chexpert': 'jpg', 'chestxray8': 'png', 'siim': 'dcm',
-                    'covid_mgh': '', 'covid_dasa': '', 'covid_nwh': '',
+                    'covid_mgh': '', 'covid_dasa': 'dcm', 'covid_nwh': '',
                     'cancer_mgh': 'npy', 'cancer_dmist2': 'npy', 'cancer_dmist3': 'npy', 'cancer_dmist4': 'npy'}
 known_tasks = {'rsna': 'detect', 'siim': 'segment'}  # everything else - solely, classification
 

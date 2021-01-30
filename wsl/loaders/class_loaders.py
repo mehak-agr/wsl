@@ -53,8 +53,9 @@ class Loader(Dataset):
             self.names = self.names[0:100]
             self.labels = self.labels[0:100]
 
+        self.new_size = (224, 224)
         self.image_transforms = Compose([
-            Resize((224, 224)),
+            Resize(self.new_size),
             RepeatChannel(repeats=3),
             CastToType(dtype=np.float32),
             ToTensor()])

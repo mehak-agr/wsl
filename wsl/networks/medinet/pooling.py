@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import sys
+import random
 import torch
 import torch.nn as nn
 from torch.autograd import Function
@@ -8,38 +9,32 @@ from torch.autograd import Function
 class WildcatPool2dFunction(Function):
 
     @staticmethod
-    def get_positive_k(k, n):
-        if k <= 0:
+    def get_positive_k(alpha, n):
+        if alpha <= 0:
             return 0
-        elif k < 1:
-            return round(k * n)
-        elif k > n:
+        elif alpha < 1:
+            return round(alpha * n)
+        elif alpha > n:
             return int(n)
         else:
-            return int(k)
+            return int(alpha)
 
     @staticmethod
     def forward(ctx, input, args):
-        ctx.kmax, ctx.kmin, ctx.alpha = args[0], args[1], args[2]
         batch_size = input.size(0)
         num_channels = input.size(1)
         h = input.size(2)
         w = input.size(3)
 
         n = h * w  # number of regions
-
-        kmax = WildcatPool2dFunction.get_positive_k(ctx.kmax, n)
-        kmin = WildcatPool2dFunction.get_positive_k(ctx.kmin, n)
+        kmax = WildcatPool2dFunction.get_positive_k(args, n)
+        ctx.k = random.randint(1, kmax + 1)
 
         sorted, indices = input.new(), input.new().long()
         torch.sort(input.view(batch_size, num_channels, n), dim=2, descending=True, out=(sorted, indices))
 
-        ctx.indices_max = indices.narrow(2, 0, kmax)
-        output = sorted.narrow(2, 0, kmax).sum(2).div_(kmax)
-
-        if kmin > 0 and ctx.alpha != 0:
-            ctx.indices_min = indices.narrow(2, n - kmin, kmin)
-            output.add_(sorted.narrow(2, n - kmin, kmin).sum(2).mul_(ctx.alpha / kmin)).div_(2)
+        ctx.indices_max = indices.narrow(2, 0, ctx.k)
+        output = sorted.narrow(2, 0, ctx.k).sum(2).div_(ctx.k)
 
         ctx.save_for_backward(input)
         return output.view(batch_size, num_channels)
@@ -55,36 +50,22 @@ class WildcatPool2dFunction(Function):
 
         n = h * w  # number of regions
 
-        kmax = WildcatPool2dFunction.get_positive_k(ctx.kmax, n)
-        kmin = WildcatPool2dFunction.get_positive_k(ctx.kmin, n)
-
-        grad_output_max = grad_output.view(batch_size, num_channels, 1).expand(batch_size, num_channels, kmax)
-
-        grad_input = grad_output.new().resize_(batch_size, num_channels, n).fill_(0).scatter_(2, ctx.indices_max, grad_output_max).div_(kmax)
-
-        if kmin > 0 and ctx.alpha != 0:
-            grad_output_min = grad_output.view(batch_size, num_channels, 1).expand(batch_size, num_channels, kmin)
-            grad_input_min = grad_output.new().resize_(batch_size, num_channels, n).fill_(0).scatter_(2, ctx.indices_min, grad_output_min).mul_(ctx.alpha / kmin)
-            grad_input.add_(grad_input_min).div_(2)
+        grad_output_max = grad_output.view(batch_size, num_channels, 1).expand(batch_size, num_channels, ctx.k)
+        grad_input = grad_output.new().resize_(batch_size, num_channels, n).fill_(0).scatter_(2, ctx.indices_max, grad_output_max).div_(ctx.k)
 
         return grad_input.view(batch_size, num_channels, h, w), None
 
 
 class WildcatPool2d(nn.Module):
-    def __init__(self, kmax=1, kmin=None, alpha=1):
+    def __init__(self, alpha=0.01):
         super(WildcatPool2d, self).__init__()
-        self.kmax = kmax
-        self.kmin = kmin
-        if self.kmin is None:
-            self.kmin = self.kmax
         self.alpha = alpha
 
     def forward(self, input):
-        return WildcatPool2dFunction.apply(input, [self.kmax, self.kmin, self.alpha])
+        return WildcatPool2dFunction.apply(input, self.alpha)
 
     def __repr__(self):
-        return self.__class__.__name__ + ' (kmax=' + str(self.kmax) + ', kmin=' + str(self.kmin) + ', alpha=' + str(
-            self.alpha) + ')'
+        return self.__class__.__name__ + f' (alpha={self.alpha})'
 
 
 class ClassWisePoolFunction(Function):

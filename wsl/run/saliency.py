@@ -64,7 +64,6 @@ def main(name: str, start: int, plot: bool):
             task = known_tasks[configs['data']]
 
         checkpoint = torch.load(model_dir / 'best.pt', map_location='cuda:0' if torch.cuda.is_available() else 'cpu')
-        checkpoint['model'] = checkpoint['model'].module
         checkpoint['model'].gradient = None
         checkpoint['model'].eval()
 
@@ -163,5 +162,3 @@ def main(name: str, start: int, plot: bool):
 
         with open(model_dir / 'configs.json', 'w') as fp:
             json.dump(configs, fp)
-
-
