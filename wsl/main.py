@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from argparse import ArgumentParser
-from wsl.run import medinet, retinanet, saliency, ood
+from wsl.run import medinet, retinanet, saliency, ood, plot_umap
 
 
 def main():
@@ -100,6 +100,14 @@ def main():
     ood_parser.add_argument('--extension', type=str, default='dcm')
     ood_parser.add_argument('--classes', type=int, default=1)
     ood_parser.set_defaults(func=ood.main)
+    
+    # UMap - the main wild map calculating routine
+    umap_parser = subparsers.add_parser('umap', help='Make umap given for model')
+    # Parameters
+    umap_parser.add_argument('--debug', action='store_true', help='In debugging mode, runs for just 10 sample images.')
+    umap_parser.add_argument('--model', type=str, help='give a list of datasets')
+    umap_parser.add_argument('--datasets', type=list)
+    umap_parser.set_defaults(func=plot_umap.main)
 
     # Run the parsers
     args = top_parser.parse_args()
